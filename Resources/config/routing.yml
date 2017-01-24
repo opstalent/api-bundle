@@ -1,0 +1,14 @@
+opstalent_api_homepage:
+    path:     /adam
+    defaults: { _controller: OpstalentApiBundle:Action:list }
+    methods: ['GET']
+    schemes: 'http'
+    options:
+      form: ''
+      repository: ''
+      secure: false
+      security:
+        roles: ['ROLE_SUPER_ADMIN','ROLE_USER']
+        disabled_properties:
+          ROLE_USER: ['enabled']
+          ROLE_SUPER_ADMIN: []
