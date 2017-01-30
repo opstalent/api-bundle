@@ -15,7 +15,7 @@
     }
   ],
   "keywords" : [
-    "api, restful, symfony 3, redis, elasticsearch"
+    "api", "restful", "symfony 3", "redis", "elasticsearch"
   ],
   "license" : [
     "MIT"
