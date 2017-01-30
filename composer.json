@@ -32,7 +32,6 @@
       "Opstalent\\ApiBundle" : ""
     }
   },
-  "target-dir" : "Opstalent/ApiBundle",
   "repositories" : [{
     "type" : "vcs",
     "url" : "https://github.com/Opstalent/ApiBundle.git"
