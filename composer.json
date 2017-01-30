@@ -32,6 +32,14 @@
       "Opstalent\\ApiBundle" : ""
     }
   },
+  "autoload": {
+    "psr-4": {
+      "Opstalent\\ApiBundle\\" : ""
+    },
+    "exclude-from-classmap": [
+      "/Tests/"
+    ]
+  },
   "repositories" : [{
     "type" : "vcs",
     "url" : "https://github.com/Opstalent/ApiBundle.git"
