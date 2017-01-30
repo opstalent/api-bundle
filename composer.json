@@ -37,9 +37,5 @@
     "type" : "vcs",
     "url" : "https://github.com/Opstalent/ApiBundle.git"
   }]
-//  "extra" : {
-//    "branch-alias" : {
-//      "dev-master" : "0"
-//    }
-//  }
+
 }
