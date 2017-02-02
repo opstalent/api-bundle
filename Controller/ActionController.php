@@ -2,10 +2,12 @@
 
 namespace Opstalent\ApiBundle\Controller;
 
+use AppBundle\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Form\AbstractType;
 
 class ActionController extends Controller
 {
@@ -24,12 +26,22 @@ class ActionController extends Controller
             // Check method
             //run logic
             //return jsonResponse
-      //dump($this->get('router')->getRouteCollection()->get($request->attributes->get('_route')));
+            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+            $form = $this->createForm($route->getOption('form'));
+            $form->handleRequest($request);
+            $form->submit($form->getData());
+            if($form->isSubmitted() || $form->isValid())
+            {
+                /** @var EntityRepository $repository */
+                $repository = $this->get(substr($route->getOption('repository'),1));
+                $data = $repository->searchByFilters($form->getData());
 
-            return new JsonResponse([
-                'success' => true,
-                'data'    => [] // Your data here
-            ]);
+                return new JsonResponse([
+                    'success' => true,
+                    'data'    => $data
+                ]);
+            } else throw new \Exception($form->getErrors()->count(),400);
+            //data ok lets handle
 
         } catch (\Exception $exception) {
 
