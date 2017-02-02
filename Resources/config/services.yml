@@ -1,1 +1,7 @@
 services:
+
+  opstalent.api_bundle.serializer_service:
+    class: Opstalent\ApiBundle\Service\SerializerService
+    arguments:
+      - ["@serializer.normalizer.object"]
+      - ["@serializer.encoder.json"]

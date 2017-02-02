@@ -4,6 +4,7 @@ namespace Opstalent\ApiBundle\Controller;
 
 use AppBundle\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -35,16 +36,15 @@ class ActionController extends Controller
                 /** @var EntityRepository $repository */
                 $repository = $this->get(substr($route->getOption('repository'),1));
                 $data = $repository->searchByFilters($form->getData());
-
-                return new JsonResponse([
-                    'success' => true,
-                    'data'    => $data
-                ]);
+                return new Response(
+                    $this->get('opstalent.api_bundle.serializer_service')->serialize($data,"json",['groups'=> ['list']]),
+                    200,
+                    ['Content-Type'=> 'application/json']
+                );
             } else throw new \Exception($form->getErrors()->count(),400);
-            //data ok lets handle
 
         } catch (\Exception $exception) {
-
+            dump($exception->getMessage());
             return new JsonResponse([
                 'success' => false,
                 'code'    => $exception->getCode(),
