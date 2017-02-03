@@ -12,32 +12,24 @@ use Symfony\Component\Form\AbstractType;
 
 class ActionController extends Controller
 {
-
     public function listAction(Request $request)
     {
         try {
-
-//            if (false === $this->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
-//                throw new AccessDeniedException();
-//            }
-
-            // Controller grab all requests to /
-            // Check token
-            // Check if user have role to use this endpoint
-            // Check method
-            //run logic
-            //return jsonResponse
+            //TODO: Enpoint security if security bundle exist
+            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
             $form->handleRequest($request);
-            $form->submit($form->getData());
-            if($form->isSubmitted() || $form->isValid())
+            if($form->isSubmitted() && $form->isValid())
             {
                 /** @var EntityRepository $repository */
                 $repository = $this->get(substr($route->getOption('repository'),1));
-                $data = $repository->searchByFilters($form->getData());
+                dump($request->query->all());
                 return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize($data,"json",['groups'=> ['list']]),
+                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                        $repository->searchByFilters($request->query->all()['list'])
+                        ,"json",['groups'=> ['list']]
+                    ),
                     200,
                     ['Content-Type'=> 'application/json']
                 );
@@ -50,7 +42,6 @@ class ActionController extends Controller
                 'code'    => $exception->getCode(),
                 'message' => $exception->getMessage(),
             ],400);
-
         }
     }
 }

@@ -37,11 +37,11 @@ class BaseRepository extends EntityRepository
     public function getPropertyType(string $property)
     {
         if (!$this->reflect->hasProperty($property)) {
-            dump('the entity does not have a such property');
+            dump('the entity does not have property: '. $property);
             return null;
         }
         $docInfo = $this->docReader->getPropertyAnnotations($this->reflect->getProperty($property));
-        return $docInfo[0]->type;
+        return (method_exists($docInfo[0],"type")) ? $docInfo[0]->type : 'string';
     }
 
     public function setLimit(int $limit, QueryBuilder $qb):QueryBuilder
@@ -75,6 +75,7 @@ class BaseRepository extends EntityRepository
             unset($data['order']);
             unset($data['orderBy']);
         }
+
         foreach ($data as $filter => $value)
         {
             if(array_key_exists($filter,$this->filters)) {
