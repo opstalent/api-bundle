@@ -118,24 +118,61 @@ class ActionController extends Controller
             //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-            $form = $this->createForm($route->getOption('form'));
-            $form->handleRequest($request);
 
-            if(($form->isSubmitted() && $form->isValid()))
-            {
-                /** @var BaseRepository $repository */
-                $repository = $this->get(substr($route->getOption('repository'),1));
-                return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $repository->persist($form->getData(),true)
-                        ,"json",['groups'=> ['list']]
-                    ),
-                    200,
-                    ['Content-Type'=> 'application/json']
-                );
-            } else {
-                throw new \Exception($form->getErrors()->count(),400);
-            }
+            /** @var BaseRepository $repository */
+            $repository = $this->get(substr($route->getOption('repository'),1));
+            if($entity = $repository->find($id)) {
+                $form = $this->createForm($route->getOption('form'),$entity);
+                foreach ($form->all() as $field => $fieldForm)
+                {
+                    if(!array_key_exists($field,$request->request->all()[$form->getName()])){
+                        $form->remove($field);
+                    }
+                }
+                $form->handleRequest($request);
+
+                if(($form->isSubmitted() && $form->isValid()))
+                {
+                    return new Response(
+                        $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                            $repository->persist($form->getData(),true)
+                            ,"json",['groups'=> ['list']]
+                        ),
+                        200,
+                        ['Content-Type'=> 'application/json']
+                    );
+                } else throw new \Exception($form->getErrors()->current()->getMessage(),404);
+
+            } else throw new \Exception("Not Found",404);
+
+        } catch (\Exception $exception) {
+            dump($exception->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'code'    => $exception->getCode(),
+                'message' => $exception->getMessage(),
+            ],400);
+        }
+    }
+
+    public function deleteAction(Request $request, int $id)
+    {
+        try {
+            //TODO: Enpoint security if security bundle exist
+            //TODO: Data Security (isOwner) for list
+            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+            /** @var BaseRepository $repository */
+            $repository = $this->get(substr($route->getOption('repository'),1));
+            if($entity = $repository->getReference($id)) {
+                    return new Response(
+                        $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                            $repository->remove($entity, true)
+                            ,"json",['groups'=> ['list']]
+                        ),
+                        200,
+                        ['Content-Type'=> 'application/json']
+                    );
+            } else throw new \Exception("Not Found",404);
 
         } catch (\Exception $exception) {
             dump($exception->getMessage());

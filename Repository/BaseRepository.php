@@ -91,10 +91,27 @@ class BaseRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getReference(int $id)
+    {
+        return $this->getEntityManager()->getReference($this->repositoryName, $id);
+    }
+
+    public function remove($data, bool $flush)
+    {
+        $this->getEntityManager()->remove($data);
+        if($flush) $this->flush();
+        return $data;
+    }
+
+    public function flush()
+    {
+        $this->getEntityManager()->flush();
+    }
+
     public function persist($data, bool $flush=false)
     {
         $this->getEntityManager()->persist($data);
-        if($flush) $this->getEntityManager()->flush();
+        if($flush) $this->flush();
         return $data;
     }
 
