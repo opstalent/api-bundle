@@ -21,7 +21,8 @@
     "MIT"
   ],
   "require" : {
-    "friendsofsymfony/oauth-server-bundle": "^1.5"
+    "friendsofsymfony/oauth-server-bundle": "^1.5",
+    "qandidate/symfony-json-request-transformer": "^1.2"
   },
   "suggest": {
     "friendsofsymfony/oauth-server-bundle": "^1.5",

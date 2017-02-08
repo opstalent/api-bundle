@@ -2,6 +2,7 @@
 
 namespace Opstalent\ApiBundle\Repository;
 
+use AppBundle\AppBundle;
 use AppBundle\Entity\User;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
@@ -17,6 +18,7 @@ class BaseRepository extends EntityRepository
     protected $repositoryAlias='';
     protected $docReader;
     protected $reflect;
+    protected $entityName='';
 
     /**
      * BaseRepository constructor.
@@ -25,7 +27,7 @@ class BaseRepository extends EntityRepository
     {
         parent::__construct($em,$class);
         $this->docReader = new AnnotationReader();
-        $entity = new User();
+        $entity = new $this->entityName();
         $this->reflect = new ReflectionClass($entity);
     }
 
@@ -87,6 +89,13 @@ class BaseRepository extends EntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function persist($data, bool $flush=false)
+    {
+        $this->getEntityManager()->persist($data);
+        if($flush) $this->getEntityManager()->flush();
+        return $data;
     }
 
     private function addPropertyFilter($value, QueryBuilder $qb, string $property, string $propertyType):QueryBuilder
