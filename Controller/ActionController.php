@@ -19,20 +19,23 @@ class ActionController extends Controller
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
-            $form->handleRequest($request);
+
+            $form->submit($request->query->all());
             if(($form->isSubmitted() && $form->isValid()) || $form->isEmpty())
             {
                 /** @var BaseRepository $repository */
                 $repository = $this->get(substr($route->getOption('repository'),1));
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $repository->searchByFilters($request->query->all()[$form->getName()])
+                        $repository->searchByFilters($form->getData())
                         ,"json",['groups'=> ['list']]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']
                 );
-            } else throw new \Exception($form->getErrors()->count(),400);
+            } else {
+                throw new \Exception($form->getErrors()->count(),400);
+            }
 
         } catch (\Exception $exception) {
             dump($exception->getMessage());
@@ -81,13 +84,12 @@ class ActionController extends Controller
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
-            dump($request->getContent());exit;
             $form->handleRequest($request);
+
             if(($form->isSubmitted() && $form->isValid()))
             {
                 /** @var BaseRepository $repository */
                 $repository = $this->get(substr($route->getOption('repository'),1));
-                ;
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $repository->persist($form->getData(),true)
@@ -97,11 +99,41 @@ class ActionController extends Controller
                     ['Content-Type'=> 'application/json']
                 );
             } else {
-                //throw new \Exception($form->getErrors(),400);
-                dump($form->getErrors());
-                dump($form->isValid());
-                dump($form->isSubmitted());
-                dump($request);
+                throw new \Exception($form->getErrors()->count(),400);
+            }
+
+        } catch (\Exception $exception) {
+            dump($exception->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'code'    => $exception->getCode(),
+                'message' => $exception->getMessage(),
+            ],400);
+        }
+    }
+
+    public function putAction(Request $request, int $id)
+    {
+        try {
+            //TODO: Enpoint security if security bundle exist
+            //TODO: Data Security (isOwner) for list
+            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+            $form = $this->createForm($route->getOption('form'));
+            $form->handleRequest($request);
+
+            if(($form->isSubmitted() && $form->isValid()))
+            {
+                /** @var BaseRepository $repository */
+                $repository = $this->get(substr($route->getOption('repository'),1));
+                return new Response(
+                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                        $repository->persist($form->getData(),true)
+                        ,"json",['groups'=> ['list']]
+                    ),
+                    200,
+                    ['Content-Type'=> 'application/json']
+                );
+            } else {
                 throw new \Exception($form->getErrors()->count(),400);
             }
 
