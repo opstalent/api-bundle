@@ -14,8 +14,6 @@ class ActionController extends Controller
 {
     public function listAction(Request $request)
     {
-        try {
-            //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
@@ -36,21 +34,10 @@ class ActionController extends Controller
             } else {
                 throw new \Exception($form->getErrors()->count(),400);
             }
-
-        } catch (\Exception $exception) {
-            dump($exception->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'code'    => $exception->getCode(),
-                'message' => $exception->getMessage(),
-            ],400);
-        }
     }
 
     public function getAction(Request $request, int $id)
     {
-        try {
-            //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             /** @var BaseRepository $repository */
@@ -66,21 +53,10 @@ class ActionController extends Controller
                     ['Content-Type'=> 'application/json']
                 );
             } else throw new \Exception("Not Found",404);
-
-        } catch (\Exception $exception) {
-            dump($exception->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'code'    => $exception->getCode(),
-                'message' => $exception->getMessage(),
-            ],400);
-        }
     }
 
     public function postAction(Request $request)
     {
-        try {
-            //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
@@ -101,21 +77,10 @@ class ActionController extends Controller
             } else {
                 throw new \Exception($form->getErrors()->count(),400);
             }
-
-        } catch (\Exception $exception) {
-            dump($exception->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'code'    => $exception->getCode(),
-                'message' => $exception->getMessage(),
-            ],400);
-        }
     }
 
     public function putAction(Request $request, int $id)
     {
-        try {
-            //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
 
@@ -144,21 +109,10 @@ class ActionController extends Controller
                 } else throw new \Exception($form->getErrors()->current()->getMessage(),404);
 
             } else throw new \Exception("Not Found",404);
-
-        } catch (\Exception $exception) {
-            dump($exception->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'code'    => $exception->getCode(),
-                'message' => $exception->getMessage(),
-            ],400);
-        }
     }
 
     public function deleteAction(Request $request, int $id)
     {
-        try {
-            //TODO: Enpoint security if security bundle exist
             //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             /** @var BaseRepository $repository */
@@ -173,14 +127,5 @@ class ActionController extends Controller
                         ['Content-Type'=> 'application/json']
                     );
             } else throw new \Exception("Not Found",404);
-
-        } catch (\Exception $exception) {
-            dump($exception->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'code'    => $exception->getCode(),
-                'message' => $exception->getMessage(),
-            ],400);
-        }
     }
 }
