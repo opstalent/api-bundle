@@ -10,6 +10,10 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
+use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
+use Opstalent\SecurityBundle\Event\RepositoryEvent;
 
 class BaseRepository extends EntityRepository
 {
@@ -19,6 +23,9 @@ class BaseRepository extends EntityRepository
     protected $docReader;
     protected $reflect;
     protected $entityName='';
+    /** @var  TraceableEventDispatcher */
+    protected $dispatcher;
+    protected $qb;
 
     /**
      * BaseRepository constructor.
@@ -31,9 +38,20 @@ class BaseRepository extends EntityRepository
         $this->reflect = new ReflectionClass($entity);
     }
 
+    public function setEventDispatcher(TraceableEventDispatcher $dispatcher)
+    {
+        $this->dispatcher = $dispatcher;
+    }
+
     public function getQueryBuilder():QueryBuilder
     {
-        return $this->getEntityManager()->getRepository($this->repositoryName)->createQueryBuilder($this->repositoryAlias);
+        return ($this->qb) ? $this->qb : $this->createQueryBuilderInstance();
+    }
+
+    public function createQueryBuilderInstance()
+    {
+        $this->qb = $this->getEntityManager()->getRepository($this->repositoryName)->createQueryBuilder($this->repositoryAlias);
+        return $this->qb;
     }
 
     public function getPropertyType(string $property)
@@ -63,6 +81,7 @@ class BaseRepository extends EntityRepository
 
     public function searchByFilters(array $data):array
     {
+        $this->dispatchEvent('before.search.by.filter', new RepositoryEvent("before.search.by.filter",$this));
         $qb = $this->getQueryBuilder();
         if(in_array('limit',$data)) {
             $this->setLimit($data['limit'],$qb);
@@ -87,6 +106,7 @@ class BaseRepository extends EntityRepository
                 $this->addPropertyFilter($value,$qb,$filter,$propertyType);
             }
         }
+
 
         return $qb->getQuery()->getResult();
     }
@@ -128,5 +148,16 @@ class BaseRepository extends EntityRepository
                 return $qb->andWhere($this->repositoryAlias . '.' . $property . ' = :' . $property)->setParameter($property, $value);
                 break;
         }
+    }
+
+    private function dispatchEvent($name,$obj)
+    {
+        if($this->dispatcher) $this->dispatcher->dispatch('before.search.by.filter', new RepositoryEvent("before.search.by.filter",$this));
+    }
+
+    public function owner($obj)
+    {
+        $qb = $this->getQueryBuilder();
+        $qb->andWhere($this->repositoryAlias . ".id = :owner")->setParameter('owner',$obj->getId());
     }
 }
