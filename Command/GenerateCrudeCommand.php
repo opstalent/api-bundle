@@ -9,6 +9,7 @@
 namespace Opstalent\ApiBundle\Command;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,9 @@ use ReflectionObject;
 
 class GenerateCrudeCommand extends ContainerAwareCommand
 {
+
+    protected $ignore = ['AppBundle\Entity\AuthCode', 'AppBundle\Entity\AccessToken', 'AppBundle\Entity\RefreshToken', 'AppBundle\Entity\Client'];
+
     protected function configure()
     {
         $this
@@ -30,7 +34,9 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
+        $entities = $this->getEntitiesNames();
+//        dump($entities);
+//        exit;
 
         $reader = new AnnotationReader();
 
@@ -64,6 +70,18 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         exit;
 
 
+    }
+
+    private function getEntitiesNames()
+    {
+        $entities = [];
+        $em = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $meta = $em->getMetadataFactory()->getAllMetadata();
+        /** @var ClassMetadata $entity */
+        foreach ($meta as $entity) {
+            if (strpos($entity->getName(), 'AppBundle\Entity') === 0 && !in_array($entity->getName(), $this->ignore)) $entities[] = $entity->getName();
+        }
+        return $entities;
     }
 
 
