@@ -144,7 +144,6 @@ class BaseRepository extends EntityRepository
                 return $qb->andWhere($ex);
                 break;
             default:
-                dump($propertyType);
                 return $qb->andWhere($this->repositoryAlias . '.' . $property . ' = :' . $property)->setParameter($property, $value);
                 break;
         }
@@ -153,11 +152,5 @@ class BaseRepository extends EntityRepository
     private function dispatchEvent($name,$obj)
     {
         if($this->dispatcher) $this->dispatcher->dispatch('before.search.by.filter', new RepositoryEvent("before.search.by.filter",$this));
-    }
-
-    public function owner($obj)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->andWhere($this->repositoryAlias . ".id = :owner")->setParameter('owner',$obj->getId());
     }
 }

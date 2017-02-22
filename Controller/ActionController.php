@@ -9,12 +9,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Form\AbstractType;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 
 class ActionController extends Controller
 {
+
     public function listAction(Request $request)
     {
-            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
 
@@ -38,7 +39,6 @@ class ActionController extends Controller
 
     public function getAction(Request $request, int $id)
     {
-            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             /** @var BaseRepository $repository */
             $repository = $this->get(substr($route->getOption('repository'),1));
@@ -57,7 +57,6 @@ class ActionController extends Controller
 
     public function postAction(Request $request)
     {
-            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             $form = $this->createForm($route->getOption('form'));
             $form->handleRequest($request);
@@ -69,7 +68,7 @@ class ActionController extends Controller
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $repository->persist($form->getData(),true)
-                        ,"json",['groups'=> ['list']]
+                        ,"json",['groups'=> ['get']]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']
@@ -81,7 +80,6 @@ class ActionController extends Controller
 
     public function putAction(Request $request, int $id)
     {
-            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
 
             /** @var BaseRepository $repository */
@@ -101,7 +99,7 @@ class ActionController extends Controller
                     return new Response(
                         $this->get('opstalent.api_bundle.serializer_service')->serialize(
                             $repository->persist($form->getData(),true)
-                            ,"json",['groups'=> ['list']]
+                            ,"json",['groups'=> ['get']]
                         ),
                         200,
                         ['Content-Type'=> 'application/json']
@@ -113,7 +111,6 @@ class ActionController extends Controller
 
     public function deleteAction(Request $request, int $id)
     {
-            //TODO: Data Security (isOwner) for list
             $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
             /** @var BaseRepository $repository */
             $repository = $this->get(substr($route->getOption('repository'),1));
@@ -121,7 +118,7 @@ class ActionController extends Controller
                     return new Response(
                         $this->get('opstalent.api_bundle.serializer_service')->serialize(
                             $repository->remove($entity, true)
-                            ,"json",['groups'=> ['list']]
+                            ,"json",['groups'=> ['get']]
                         ),
                         200,
                         ['Content-Type'=> 'application/json']
