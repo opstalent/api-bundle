@@ -9,6 +9,7 @@
 namespace Opstalent\ApiBundle\Command;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,9 @@ use ReflectionObject;
 
 class GenerateCrudeCommand extends ContainerAwareCommand
 {
+
+    protected $ignore = ['AppBundle\Entity\AuthCode', 'AppBundle\Entity\AccessToken', 'AppBundle\Entity\RefreshToken', 'AppBundle\Entity\Client'];
+
     protected function configure()
     {
         $this
@@ -30,14 +34,13 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $entities = $this->getEntitiesNames();
+        $this->createApiRoutes($entities);
 
 
         $reader = new AnnotationReader();
-
-        $user = new User();
-        $reflectionClass = new ReflectionClass('AppBundle\Entity\User');
+        $reflectionClass = new ReflectionClass($entity);
         $classAnnotations = $reader->getClassAnnotations($reflectionClass);
-
 
 //        $reflectionObject = new ReflectionObject($user);
 //        $objectAnnotations = $reader->getClassAnnotations($reflectionObject);
@@ -64,6 +67,27 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         exit;
 
 
+    }
+
+    private function getEntitiesNames()
+    {
+        $entities = [];
+        $em = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $meta = $em->getMetadataFactory()->getAllMetadata();
+        /** @var ClassMetadata $entity */
+        foreach ($meta as $entity) {
+            if (strpos($entity->getName(), 'AppBundle\Entity') === 0 && !in_array($entity->getName(), $this->ignore)) $entities[] = $entity->getName();
+        }
+        return $entities;
+    }
+
+    private function createApiRoutes($entities)
+    {
+        foreach ($entities as $key => $entity) {
+            $array = array_pop(explode('\\', $entity));
+            dump($array);
+            exit;
+        }
     }
 
 
