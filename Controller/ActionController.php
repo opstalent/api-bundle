@@ -27,7 +27,7 @@ class ActionController extends Controller
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $repository->searchByFilters($form->getData())
-                        ,"json",['groups'=> ['list']]
+                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'list']]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']
@@ -47,7 +47,7 @@ class ActionController extends Controller
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $data
-                        ,"json",['groups'=> ['get']]
+                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']
@@ -68,7 +68,7 @@ class ActionController extends Controller
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $repository->persist($form->getData(),true)
-                        ,"json",['groups'=> ['get']]
+                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']
@@ -99,7 +99,7 @@ class ActionController extends Controller
                     return new Response(
                         $this->get('opstalent.api_bundle.serializer_service')->serialize(
                             $repository->persist($form->getData(),true)
-                            ,"json",['groups'=> ['get']]
+                            ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
                         ),
                         200,
                         ['Content-Type'=> 'application/json']
@@ -118,7 +118,7 @@ class ActionController extends Controller
                     return new Response(
                         $this->get('opstalent.api_bundle.serializer_service')->serialize(
                             $repository->remove($entity, true)
-                            ,"json",['groups'=> ['get']]
+                            ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
                         ),
                         200,
                         ['Content-Type'=> 'application/json']
