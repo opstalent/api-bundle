@@ -107,7 +107,7 @@ class BaseRepository extends EntityRepository
             }
         }
 
-
+        $this->dispatchEvent('after.search.by.filter', new RepositoryEvent("after.search.by.filter",$this));
         return $qb->getQuery()->getResult();
     }
 
