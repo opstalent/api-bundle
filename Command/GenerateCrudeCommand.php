@@ -18,11 +18,15 @@ use AppBundle\Entity\User;
 use ReflectionClass;
 use ReflectionProperty;
 use ReflectionObject;
+use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Opstalent\ApiBundle\Util\Pluralizer;
 
 class GenerateCrudeCommand extends ContainerAwareCommand
 {
 
     protected $ignore = ['AppBundle\Entity\AuthCode', 'AppBundle\Entity\AccessToken', 'AppBundle\Entity\RefreshToken', 'AppBundle\Entity\Client'];
+
 
     protected function configure()
     {
@@ -35,9 +39,38 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $entities = $this->getEntitiesNames();
-        $this->createApiRoutes($entities);
 
+        if (file_exists($this->getContainer()->get('kernel')->getRootDir() . '/config/api_routes.yml')) {
+            $helper = $this->getHelper('question');
+            $question = new ConfirmationQuestion('api_routes.yml allready exists, overwrite ?', false);
+            if ($helper->ask($input, $output, $question)) {
+                $this->createApiRoutes($entities);
+            }
+        } else {
+            $this->createApiRoutes($entities);
+        }
 
+        foreach ($entities as $entity) {
+            $yamlArray = null;
+            $className = $this->getClassName($entity);
+            if (file_exists($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . strtolower(Pluralizer::pluralize($className)) . '.yml')) {
+                $helper = $this->getHelper('question');
+                $question = new ConfirmationQuestion($className . '.yml allready exists, overwrite ?', false);
+                if ($helper->ask($input, $output, $question)) {
+                    $yamlArray = $this->createRoutes($entity);
+                }
+            } else {
+                $yamlArray = $this->createRoutes($entity);
+            }
+            if ($yamlArray) {
+                $yaml = Yaml::dump($yamlArray, 2);
+                file_put_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . strtolower(Pluralizer::pluralize($className)) . '.yml', $yaml);
+
+            }
+        }
+
+        dump('koniec');
+        exit;
         $reader = new AnnotationReader();
         $reflectionClass = new ReflectionClass($entity);
         $classAnnotations = $reader->getClassAnnotations($reflectionClass);
@@ -83,12 +116,51 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     private function createApiRoutes($entities)
     {
+        $yamlArray = [];
         foreach ($entities as $key => $entity) {
-            $array = array_pop(explode('\\', $entity));
-            dump($array);
-            exit;
+            $className = $this->getClassName($entity);
+            $pluralClassName = strtolower(Pluralizer::pluralize($className));
+            $array = [$pluralClassName => ['resource' => 'routing/' . $pluralClassName . '.yml']];
+            $yamlArray = array_merge($yamlArray, $array);
         }
+        $yaml = Yaml::dump($yamlArray);
+        file_put_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/api_routes.yml', $yaml);
     }
 
+    private function createRoutes($entity)
+    {
+        $yamlArray = [];
+        $listArray = $this->generateListRoute($entity);
+        $yamlArray = array_merge($yamlArray, $listArray);
+        return $yamlArray;
+
+    }
+
+    private function getClassName($entity)
+    {
+        return substr($entity, strrpos($entity, '\\') + 1);
+    }
+
+    private function generateListRoute($entity)
+    {
+
+        $className = $this->getClassName($entity);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $array = ['api_' . $pluralClassName . '_list' =>
+            ['path' => '/' . $pluralClassName,
+                'defaults' => ['_controller' => 'OpstalentApiBundle:Action:list'],
+                'methods' => ['GET'],
+                'options' => [
+                    'form' => "AppBundle\\Form\\" . $className . "\\FilterType",
+                    'repository' => '@repository.' . strtolower($className),
+                    'security' => [
+                        'secure' => true,
+                        'roles' => ['ROLE_SUPER_ADMIN']
+                    ]]]];
+
+        return $array;
+    }
 
 }
+
+
