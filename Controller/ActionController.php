@@ -74,7 +74,7 @@ class ActionController extends Controller
                     ['Content-Type'=> 'application/json']
                 );
             } else {
-                throw new \Exception($form->getErrors()->count(),400);
+                throw new \Exception((string)$form->getErrors(true,true),400);
             }
     }
 
@@ -93,8 +93,7 @@ class ActionController extends Controller
                     }
                 }
                 $form->handleRequest($request);
-
-                if(($form->isSubmitted() && $form->isValid()))
+                if($form->isSubmitted() && $form->isValid())
                 {
                     return new Response(
                         $this->get('opstalent.api_bundle.serializer_service')->serialize(
@@ -104,7 +103,9 @@ class ActionController extends Controller
                         200,
                         ['Content-Type'=> 'application/json']
                     );
-                } else throw new \Exception($form->getErrors()->current()->getMessage(),404);
+                } else {
+                    throw new \Exception((string)$form->getErrors(true,true),404);
+                }
 
             } else throw new \Exception("Not Found",404);
     }
