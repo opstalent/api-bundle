@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }}\Repository;
+
+{% block use_statements %}
+use Doctrine\ORM\QueryBuilder;
+use Opstalent\ApiBundle\Repository\BaseRepository;
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ repository_class }} extends BaseRepository
+{% endblock class_definition %}
+
+
+{
+{% block class_body %}
+
+ protected $filters = [];
+ protected $repositoryName='AppBundle:{{ entity_class }}';
+ protected $repositoryAlias='{{ entity_class |lower }}';
+ protected $entityName='\{{ entity_path }}';
+
+{% endblock class_body %}
+}
