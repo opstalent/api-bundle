@@ -33,7 +33,7 @@ class ActionController extends Controller
                     ['Content-Type'=> 'application/json']
                 );
             } else {
-                throw new \Exception($form->getErrors()->count(),400);
+                throw new \Exception((string)$form->getErrors(true,false),400);
             }
     }
 
@@ -104,7 +104,7 @@ class ActionController extends Controller
                         ['Content-Type'=> 'application/json']
                     );
                 } else {
-                    throw new \Exception((string)$form->getErrors(true,true),404);
+                    throw new \Exception((string)$form->getErrors(true,false),404);
                 }
 
             } else throw new \Exception("Not Found",404);
