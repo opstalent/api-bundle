@@ -1,0 +1,37 @@
+<?php
+
+namespace {{ namespace }}\Form\{{entity_class}};
+
+{% block use_statements %}
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ form_class }} extends AbstractType
+{% endblock class_definition %}
+{
+{% block class_body %}
+    {%- if fields|length > 0 %}
+/**
+* {@inheritdoc}
+*/
+public function buildForm(FormBuilderInterface $builder, array $options)
+{
+$builder
+
+{%- for key , field in fields -%}
+
+->add('{{ key }}', {{ field }}::class,['required' => true, 'mapped' => false])
+
+{%- endfor %}
+;
+}
+{% endif %}
+
+{% endblock class_body %}
+}
