@@ -108,6 +108,15 @@ class BaseRepository extends EntityRepository
         }
 
         $this->dispatchEvent('after.search.by.filter', new RepositoryEvent("after.search.by.filter",$this));
+
+        if(in_array('count', $data)) {
+            $query = $qb->getQuery();
+            $paginator  = new \Doctrine\ORM\Tools\Pagination\Paginator($query);
+            return [
+                'data' => $query->getResult(),
+                'total' => count($paginator)
+            ];
+        }
         return $qb->getQuery()->getResult();
     }
 
