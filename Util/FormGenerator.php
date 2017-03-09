@@ -29,9 +29,9 @@ class FormGenerator extends Generator
     private $classPath;
     private $rootDir;
 
-    private $map = ['string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType'];
-    private $formMapPath = ['Filter' => 'filterFormType.twig', 'Add' => 'addFormType.twig'];
-    private $formMap = ['Filter' => 'FilterType.php', 'Add' => 'AddType.php', 'Edit' => 'EditType'];
+    private $map = ['string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
+    private $formMapPath = ['Filter' => 'filterFormType.twig', 'Add' => 'addFormType.twig', 'Edit' => 'editFormType.twig'];
+    private $formMap = ['Filter' => 'FilterType.php', 'Add' => 'AddType.php', 'Edit' => 'EditType.php'];
 
 
     /**
@@ -77,13 +77,15 @@ class FormGenerator extends Generator
 //            ':Email:' . $template . '.email.twig',
 //            $parameters
 //        );
+        dump($this->getFieldsFromMetadata($metadata));
+//        exit;
 
         $this->renderFile($this->formMapPath[$formType], $dirPath, array(
             'fields' => $this->getFieldsFromMetadata($metadata),
             'namespace' => 'AppBundle',
             'entity_namespace' => 'Entity',
             'entity_class' => $className,
-            'form_class' =>  $formType . 'Type',
+            'form_class' => $formType . 'Type',
 //            // BC with Symfony 2.7
 //            'get_name_required' => !method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix'),
         ));
@@ -123,7 +125,7 @@ class FormGenerator extends Generator
 
         foreach ($fields as $field) {
             if (array_key_exists($field, $metadata->fieldMappings)) {
-                $fields[$field] = $this->map[$metadata->fieldMappings[$field]['type']];
+                $fields[$field] = ['type' => $this->map[$metadata->fieldMappings[$field]['type']], 'nullable' => $metadata->fieldMappings[$field]['nullable']];
             }
 
         }

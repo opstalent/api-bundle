@@ -9,6 +9,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use AppBundle\Entity\{{ entity_class }};
 {% endblock use_statements %}
 
 {% block class_definition %}
@@ -21,16 +24,31 @@ class {{ form_class }} extends AbstractType
 * {@inheritdoc}
 */
 public function buildForm(FormBuilderInterface $builder, array $options)
-{
-$builder
+    {
+        $builder
 
 {%- for key , field in fields -%}
 
-->add('{{ key }}', {{ field }}::class,['required' => true, 'mapped' => false])
+{% if field.type == 'DateTimeType' %}
+        ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true ,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
+{% else %}
+        ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true])
+{%  endif %}
+
+
 
 {%- endfor %}
 ;
+
 }
+
+public function configureOptions(OptionsResolver $resolver)
+{
+$resolver->setDefaults(array(
+'data_class' => {{ entity_class }}::class,
+));
+}
+
 {% endif %}
 
 {% endblock class_body %}
