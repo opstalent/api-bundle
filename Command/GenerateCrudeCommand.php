@@ -67,8 +67,9 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 //            }
                 // FilterForms
                 $metadata = $this->getEntityMetadata($entity);
-                $formGenerator->generate($entity, $metadata[0], $className , 'Filter');
-                $formGenerator->generate($entity, $metadata[0], $className , 'Add');
+                $formGenerator->generate($entity, $metadata[0], $className, 'Filter');
+                $formGenerator->generate($entity, $metadata[0], $className, 'Add');
+                $formGenerator->generate($entity, $metadata[0], $className, 'Edit');
 
                 // repositories
 
@@ -182,6 +183,10 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         $yamlArray = array_merge($yamlArray, $getArray);
         $postArray = $this->generatePostRoute($entity);
         $yamlArray = array_merge($yamlArray, $postArray);
+        $postArray = $this->generatePutRoute($entity);
+        $yamlArray = array_merge($yamlArray, $postArray);
+        $postArray = $this->generateDeleteRoute($entity);
+        $yamlArray = array_merge($yamlArray, $postArray);
         return $yamlArray;
 
     }
@@ -218,7 +223,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
         $array = ['api_' . $pluralClassName . '_get' =>
-            [   'path' => '/' . $pluralClassName . '/{id}',
+            ['path' => '/' . $pluralClassName . '/{id}',
                 'requirements' => ['id' => '\d+'],
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:get'],
                 'methods' => ['GET'],
@@ -232,6 +237,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
         return $array;
     }
+
     private function generatePostRoute($entity)
     {
 
@@ -253,13 +259,56 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         return $array;
     }
 
+    private function generatePutRoute($entity)
+    {
 
+        $className = $this->getClassName($entity);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $array = ['api_' . $pluralClassName . '_put' =>
+            ['path' => '/' . $pluralClassName . '/{id}',
+                'requirements' => ['id' => '\d+'],
+                'defaults' => ['_controller' => 'OpstalentApiBundle:Action:put'],
+                'methods' => ['PUT'],
+                'options' => [
+                    'form' => "AppBundle\\Form\\" . $className . "\\EditType",
+                    'serializerGroup' => 'get',
+                    'repository' => '@repository.' . strtolower($className),
+                    'security' => [
+                        'secure' => true,
+                        'roles' => ['ROLE_SUPER_ADMIN']
+                    ]]]];
+
+        return $array;
+    }
+
+
+    private function generateDeleteRoute($entity)
+    {
+
+        $className = $this->getClassName($entity);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $array = ['api_' . $pluralClassName . '_delete' =>
+            ['path' => '/' . $pluralClassName . '/{id}',
+                'requirements' => ['id' => '\d+'],
+                'defaults' => ['_controller' => 'OpstalentApiBundle:Action:delete'],
+                'methods' => ['DELETE'],
+                'options' => [
+                    'serializerGroup' => 'get',
+                    'repository' => '@repository.' . strtolower($className),
+                    'security' => [
+                        'secure' => true,
+                        'roles' => ['ROLE_SUPER_ADMIN']
+                    ]]]];
+
+        return $array;
+    }
 
     protected function getEntityMetadata($entity)
     {
         $factory = new DisconnectedMetadataFactory($this->getContainer()->get('doctrine'));
 
-        dump($factory->getClassMetadata($entity));
+//        dump($factory->getClassMetadata($entity));
+//        exit;
 
         return $factory->getClassMetadata($entity)->getMetadata();
     }
