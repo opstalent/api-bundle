@@ -29,7 +29,7 @@ class FormGenerator extends Generator
     private $classPath;
     private $rootDir;
 
-    private $map = ['string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
+    private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
     private $formMapPath = ['Filter' => 'filterFormType.twig', 'Add' => 'addFormType.twig', 'Edit' => 'editFormType.twig'];
     private $formMap = ['Filter' => 'FilterType.php', 'Add' => 'AddType.php', 'Edit' => 'EditType.php'];
 
@@ -103,12 +103,15 @@ class FormGenerator extends Generator
      */
     private function getFieldsFromMetadata(ClassMetadataInfo $metadata)
     {
-        $fields = (array)$metadata->fieldNames;
+
+
+        $fields = (array)$metadata->columnNames;
 //        var_dump($fields);
 
 
         // Remove the primary key field if it's not managed manually
         if (!$metadata->isIdentifierNatural()) {
+
             $fields = array_diff($fields, $metadata->identifier);
         }
 
@@ -117,17 +120,20 @@ class FormGenerator extends Generator
 //                $fields[$fieldName] = $fieldName;
 //            }
 //        }
-//        dump($fields);
-//        exit;
+        dump($fields);
+
 //
 //        dump($metadata);
 
 
-        foreach ($fields as $field) {
-            if (array_key_exists($field, $metadata->fieldMappings)) {
-                $fields[$field] = ['type' => $this->map[$metadata->fieldMappings[$field]['type']], 'nullable' => $metadata->fieldMappings[$field]['nullable']];
-            }
+        foreach ($fields as $key => $field) {
+//            dump($field);
+//            dump($metadata->fieldMappings);
+            if (array_key_exists($key, $metadata->fieldMappings)) {
+//                dump($key);
+                $fields[$key] = ['type' => $this->map[$metadata->fieldMappings[$key]['type']], 'nullable' => $metadata->fieldMappings[$key]['nullable']];
 
+            }
         }
 //        dump($fields);
 //        exit;

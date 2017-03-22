@@ -12,6 +12,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Opstalent\ApiBundle\Util\FormGenerator;
 use Opstalent\ApiBundle\Util\RepositoryGenerator;
+use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,6 +27,8 @@ use Opstalent\ApiBundle\Util\Pluralizer;
 use Doctrine\Bundle\DoctrineBundle\Mapping\DisconnectedMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Sensio\Bundle\GeneratorBundle\Generator\Generator;
+use Symfony\Component\Console\Input\InputArgument;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 
 
 class GenerateCrudeCommand extends ContainerAwareCommand
@@ -39,16 +42,26 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         $this
             ->setName('app:generatecrude')
             ->setDescription('Generate crude files')
+            ->addArgument('entityPath', InputArgument::OPTIONAL, 'The entity name.')
             ->setHelp('This command allows you to fast fill database with data. Enjoy!');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
+            $config = $value = Yaml::parse(file_get_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/config.yml'));
+            $generatorconfig = $config['api_generator'];
+//            dump($config);
+//            exit;
+            AnnotationRegistry::registerLoader('class_exists');
+            if ($input->getArgument('entityPath')) {
+                $entities = [$input->getArgument('entityPath')];
+            } else {
+                $entities = $this->getEntitiesNames();
+                $this->createApiRoutes($entities, false); // main route file
+                $this->createRepositoriesYaml($entities, false); // repositories.yml
+            }
 
-            $entities = $this->getEntitiesNames();
-            $this->createApiRoutes($entities); // main route file
-            $this->createRepositoriesYaml($entities);
 
             $formGenerator = new FormGenerator($this->getContainer()->get('filesystem'), $this->getContainer()->get('kernel')->getRootDir());
             $repositoryGenerator = new RepositoryGenerator($this->getContainer()->get('filesystem'), $this->getContainer()->get('kernel')->getRootDir());
@@ -59,14 +72,17 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 //            $yamlArray = null;
                 $className = $this->getClassName($entity);
                 $yamlArray = $this->createRoutes($entity);
-
+//                dump($entity);
+//                exit;
 //            if ($yamlArray) {
                 $yaml = Yaml::dump($yamlArray, 2);
                 file_put_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . strtolower(Pluralizer::pluralize($className)) . '.yml', $yaml);
 
 //            }
+
                 // FilterForms
                 $metadata = $this->getEntityMetadata($entity);
+
                 $formGenerator->generate($entity, $metadata[0], $className, 'Filter');
                 $formGenerator->generate($entity, $metadata[0], $className, 'Add');
                 $formGenerator->generate($entity, $metadata[0], $className, 'Edit');
@@ -124,15 +140,12 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         foreach ($meta as $entity) {
             if (strpos($entity->getName(), 'AppBundle\Entity') === 0 && !in_array($entity->getName(), $this->ignore)) $entities[] = $entity->getName();
         }
+
         return $entities;
     }
 
-    private function createRepositoriesYaml($entities)
+    private function createRepositoriesYaml(array $entities, bool $edit)
     {
-
-//        $value = Yaml::parse(file_get_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/services.yml'));
-//        dump($value);
-//        exit;
 
         $yamlArray = [];
         foreach ($entities as $key => $entity) {
@@ -155,7 +168,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         file_put_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/repositories.yml', $yaml);
     }
 
-    private function createApiRoutes($entities)
+    private function createApiRoutes(array $entities, bool $edit)
     {
         $yamlArray = [];
         foreach ($entities as $key => $entity) {
