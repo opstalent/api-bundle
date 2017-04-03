@@ -94,6 +94,9 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Repository/' . $className . 'Repository.php')) $this->generateRepository($entityPath, $className);
 
                 }
+                if ($this->overWrite) {
+                    $this->editEntityFile($entityPath);
+                }
 
             }
             dump('koniec');
@@ -129,6 +132,37 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             var_dump($e->getTraceAsString());
         }
 
+
+    }
+
+    public function editEntityFile(string $entityPath)
+    {
+        $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/' . str_replace('\\', '/', $entityPath . '.php');
+        $entityFile = file_get_contents($filePath);
+//        $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
+//        $repositoryString = strpos($entityFile, "repository");
+
+        $fileArray = explode("\n", $entityFile);
+        foreach ($fileArray as $key => $line) {
+            if (strpos($line, "repository") != false) {
+                if ($this->overWrite) {
+                    $fileArray[$key] = ' * @ORM\\Entity(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")';
+                    $newFile = implode("\n", $fileArray);
+                    return self::dump($filePath, $newFile);
+                    break;
+                }
+            } elseif (strpos($line, "@ORM\\Id") != false) {
+                $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
+                $newFile = substr_replace($entityFile, '(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")', $entryPosition, 0);
+                return self::dump($filePath, $newFile);
+            };
+        }
+
+
+    }
+
+    private function createRepositoryClassName()
+    {
 
     }
 
