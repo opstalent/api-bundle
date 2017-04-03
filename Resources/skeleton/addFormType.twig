@@ -1,6 +1,6 @@
 <?php
 
-namespace {{ namespace }}\Form\{{entity_class}};
+namespace {{ namespace }}\Form\{{ entity_class }};
 
 {% block use_statements %}
 use Symfony\Component\Form\AbstractType;
@@ -15,7 +15,7 @@ use AppBundle\Entity\{{ entity_class }};
 {% endblock use_statements %}
 
 {% block class_definition %}
-class {{ form_class }} extends AbstractType
+class AddType extends AbstractType
 {% endblock class_definition %}
 {
 {% block class_body %}
@@ -32,8 +32,8 @@ public function buildForm(FormBuilderInterface $builder, array $options)
 {% if field.type == 'DateTimeType' %}
         ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true ,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
 {% else %}
-        ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true])
-{%  endif %}
+    ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true])
+{% endif %}
 
 
 
@@ -44,9 +44,9 @@ public function buildForm(FormBuilderInterface $builder, array $options)
 
 public function configureOptions(OptionsResolver $resolver)
 {
-$resolver->setDefaults(array(
+$resolver->setDefaults([
 'data_class' => {{ entity_class }}::class,
-));
+]);
 }
 
 {% endif %}
