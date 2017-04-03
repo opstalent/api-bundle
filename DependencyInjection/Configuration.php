@@ -19,7 +19,20 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('opstalent_api');
+        $rootNode
+            ->children()
+                ->arrayNode('generator')
+                    ->children()
+                        ->arrayNode('ignore')
+                             ->prototype('scalar')
+                             ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
 
+
+//            ->append(['generator' => ['ignore' => []]]);
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.

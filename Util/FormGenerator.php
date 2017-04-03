@@ -63,7 +63,7 @@ class FormGenerator extends Generator
      * @param ClassMetadataInfo $metadata The entity metadata class
      * @param bool $forceOverwrite If true, remove any existing form class before generating it again
      */
-    public function generate($entity, ClassMetadataInfo $metadata, $className, $formType)
+    public function generate($entityPath, ClassMetadataInfo $metadata, $className, $formType)
     {
         $dirPath = $this->rootDir . '/../src/AppBundle/Form/' . $className . '/' . $this->formMap[$formType];
 //        $this->classPath = $dirPath.'/'.str_replace('\\', '/', $entity).'Type.php';

@@ -23,6 +23,7 @@ class OpstalentApiExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $container->setParameter( 'opstalent_api.generator.ignore', $config['generator']['ignore'] );
         $loader->load('services.yml');
     }
 }
