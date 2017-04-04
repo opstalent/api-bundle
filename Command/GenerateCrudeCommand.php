@@ -43,6 +43,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
 
+
     protected function configure()
     {
         $this
@@ -94,9 +95,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Repository/' . $className . 'Repository.php')) $this->generateRepository($entityPath, $className);
 
                 }
-                if ($this->overWrite) {
-                    $this->editEntityFile($entityPath);
-                }
+                $this->editEntityFile($entityPath);
 
             }
             dump('koniec');
@@ -139,18 +138,15 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     {
         $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/' . str_replace('\\', '/', $entityPath . '.php');
         $entityFile = file_get_contents($filePath);
-//        $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
-//        $repositoryString = strpos($entityFile, "repository");
-
         $fileArray = explode("\n", $entityFile);
         foreach ($fileArray as $key => $line) {
-            if (strpos($line, "repository") != false) {
+            if (strpos($line, "repositoryClass") != false) {
                 if ($this->overWrite) {
                     $fileArray[$key] = ' * @ORM\\Entity(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")';
                     $newFile = implode("\n", $fileArray);
                     return self::dump($filePath, $newFile);
-                    break;
                 }
+
             } elseif (strpos($line, "@ORM\\Id") != false) {
                 $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
                 $newFile = substr_replace($entityFile, '(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")', $entryPosition, 0);
@@ -183,8 +179,10 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     {
 
         $dirPath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/AppBundle/Form/' . $className . '/' . $formType;
+        $fieldsMetadata = $this->getFieldsFromMetadata($metadata);
         $this->renderFile($this->formMapPath[$formType], $dirPath, array(
-            'fields' => $this->getFieldsFromMetadata($metadata),
+            'uses' => $this->getUsesForFields($fieldsMetadata),
+            'fields' => $fieldsMetadata,
             'namespace' => 'AppBundle',
             'entity_namespace' => 'Entity',
             'entity_class' => $className,
@@ -193,19 +191,26 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     }
 
+    private function getUsesForFields(array $fieldsMetadata)
+    {
+        $useArray = [];
+        foreach ($fieldsMetadata as $field) {
+            if (!in_array($field['type'], $useArray)) $useArray[] = $field['type'];
+        }
+        return $useArray;
+
+    }
+
     private function getFieldsFromMetadata(ClassMetadataInfo $metadata)
     {
 
         $fields = (array)$metadata->columnNames;
         if (!$metadata->isIdentifierNatural()) {
-
             $fields = array_diff($fields, $metadata->identifier);
         }
-
         foreach ($fields as $key => $field) {
             if (array_key_exists($key, $metadata->fieldMappings)) {
                 $fields[$key] = ['type' => $this->map[$metadata->fieldMappings[$key]['type']], 'nullable' => $metadata->fieldMappings[$key]['nullable']];
-
             }
         }
         return $fields;
@@ -343,7 +348,8 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         return $arrayRepositories;
     }
 
-    private function createRepositoryYmlParameterEntry($arrayParameters, $entityPath)
+    private
+    function createRepositoryYmlParameterEntry($arrayParameters, $entityPath)
     {
         $className = $this->getClassName($entityPath);
         $arrayParameters['entity.' . strtolower($className)] = $entityPath;
