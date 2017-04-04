@@ -86,13 +86,8 @@ class ActionController extends Controller
             $repository = $this->get(substr($route->getOption('repository'),1));
             if($entity = $repository->find($id)) {
                 $form = $this->createForm($route->getOption('form'),$entity);
-                foreach ($form->all() as $field => $fieldForm)
-                {
-                    if(!array_key_exists($field,$request->request->all()[$form->getName()])){
-                        $form->remove($field);
-                    }
-                }
                 $form->handleRequest($request);
+                dump($form->getData());
                 if($form->isSubmitted() && $form->isValid())
                 {
                     return new Response(

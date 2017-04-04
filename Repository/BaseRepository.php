@@ -81,7 +81,7 @@ class BaseRepository extends EntityRepository
 
     public function searchByFilters(array $data):array
     {
-        $this->dispatchEvent('before.search.by.filter', new RepositoryEvent("before.search.by.filter",$this));
+        $this->dispatchEvent('before.search.by.filter', $this);
         $qb = $this->getQueryBuilder();
         if(in_array('limit',$data)) {
             $this->setLimit($data['limit'],$qb);
@@ -107,7 +107,7 @@ class BaseRepository extends EntityRepository
             }
         }
 
-        $this->dispatchEvent('after.search.by.filter', new RepositoryEvent("after.search.by.filter",$this));
+        $this->dispatchEvent('after.search.by.filter', $this);
 
         $query = $qb->getQuery();
         if(in_array('count', $data)) {
@@ -141,7 +141,9 @@ class BaseRepository extends EntityRepository
 
     public function persist($data, bool $flush=false)
     {
+        $this->dispatchEvent('before.persist', $this, $data);
         $this->getEntityManager()->persist($data);
+        $this->dispatchEvent('after.persist',$this, $data);
         if($flush) $this->flush();
         return $data;
     }
@@ -160,8 +162,8 @@ class BaseRepository extends EntityRepository
         }
     }
 
-    private function dispatchEvent($name,$obj)
+    private function dispatchEvent($name,$obj,$data=null)
     {
-        if($this->dispatcher) $this->dispatcher->dispatch('before.search.by.filter', new RepositoryEvent("before.search.by.filter",$this));
+        if($this->dispatcher) $this->dispatcher->dispatch($name, new RepositoryEvent($name,$obj,$data));
     }
 }
