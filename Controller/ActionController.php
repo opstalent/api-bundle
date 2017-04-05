@@ -87,7 +87,6 @@ class ActionController extends Controller
             if($entity = $repository->find($id)) {
                 $form = $this->createForm($route->getOption('form'),$entity);
                 $form->handleRequest($request);
-                dump($form->getData());
                 if($form->isSubmitted() && $form->isValid())
                 {
                     return new Response(
