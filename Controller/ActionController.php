@@ -18,108 +18,105 @@ class ActionController extends Controller
 
     public function listAction(Request $request)
     {
-            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-            $form = $this->createForm($route->getOption('form'));
+        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+        $form = $this->createForm($route->getOption('form'));
 
-            $form->submit($request->query->all());
-            if(($form->isSubmitted() && $form->isValid()) || $form->isEmpty())
-            {
-                /** @var BaseRepository $repository */
-                $repository = $this->get(substr($route->getOption('repository'),1));
-                return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $repository->searchByFilters($form->getData())
-                        ,"json",['groups'=> $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "list")]
-                    ),
-                    200,
-                    ['Content-Type'=> 'application/json']
-                );
-            } else {
-                throw new \Exception((string)$form->getErrors(true,false),400);
-            }
+        $form->submit($request->query->all());
+        if (($form->isSubmitted() && $form->isValid()) || $form->isEmpty()) {
+            /** @var BaseRepository $repository */
+            $repository = $this->get(substr($route->getOption('repository'), 1));
+            return new Response(
+                $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                    $repository->searchByFilters($form->getData())
+                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "list")]
+                ),
+                200,
+                ['Content-Type' => 'application/json']
+            );
+        } else {
+            throw new \Exception((string)$form->getErrors(true, false), 400);
+        }
     }
 
     public function getAction(Request $request, int $id)
     {
-            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-            /** @var BaseRepository $repository */
-            $repository = $this->get(substr($route->getOption('repository'),1));
-            $data = $repository->find($id);
-            if($data) {
-                return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $data
-                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
-                    ),
-                    200,
-                    ['Content-Type'=> 'application/json']
-                );
-            } else throw new \Exception("Not Found",404);
+        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+        /** @var BaseRepository $repository */
+        $repository = $this->get(substr($route->getOption('repository'), 1));
+        $data = $repository->find($id);
+        if ($data) {
+            return new Response(
+                $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                    $data
+                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $data)]
+                ),
+                200,
+                ['Content-Type' => 'application/json']
+            );
+        } else throw new \Exception("Not Found", 404);
     }
 
     public function postAction(Request $request)
     {
-            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-            $form = $this->createForm($route->getOption('form'));
-            $form->handleRequest($request);
+        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+        $form = $this->createForm($route->getOption('form'));
+        $form->handleRequest($request);
 
-            if(($form->isSubmitted() && $form->isValid()))
-            {
-                /** @var BaseRepository $repository */
-                $repository = $this->get(substr($route->getOption('repository'),1));
-                return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $repository->persist($form->getData(),true)
-                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
-                    ),
-                    200,
-                    ['Content-Type'=> 'application/json']
-                );
-            } else {
-                throw new \Exception((string)$form->getErrors(true,true),400);
-            }
+        if (($form->isSubmitted() && $form->isValid())) {
+            /** @var BaseRepository $repository */
+            $repository = $this->get(substr($route->getOption('repository'), 1));
+            return new Response(
+                $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                    $repository->persist($form->getData(), true)
+                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get")]
+                ),
+                200,
+                ['Content-Type' => 'application/json']
+            );
+        } else {
+            throw new \Exception((string)$form->getErrors(true, true), 400);
+        }
     }
 
     public function putAction(Request $request, int $id)
     {
-            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
 
-            /** @var BaseRepository $repository */
-            $repository = $this->get(substr($route->getOption('repository'),1));
-            if($entity = $repository->find($id)) {
-                $form = $this->createForm($route->getOption('form'),$entity);
-                $form->handleRequest($request);
-                if($form->isSubmitted() && $form->isValid())
-                {
-                    return new Response(
-                        $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                            $repository->persist($form->getData(),true)
-                            ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
-                        ),
-                        200,
-                        ['Content-Type'=> 'application/json']
-                    );
-                } else {
-                    throw new \Exception((string)$form->getErrors(true,false),404);
-                }
+        /** @var BaseRepository $repository */
+        $repository = $this->get(substr($route->getOption('repository'), 1));
+        if ($entity = $repository->find($id)) {
+            $form = $this->createForm($route->getOption('form'), $entity);
+            $form->handleRequest($request);
+            if ($form->isSubmitted() && $form->isValid()) {
+                return new Response(
+                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                        $repository->persist($form->getData(), true)
+                        , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $form->getData())]
+                    ),
+                    200,
+                    ['Content-Type' => 'application/json']
+                );
+            } else {
+                throw new \Exception((string)$form->getErrors(true, false), 404);
+            }
 
-            } else throw new \Exception("Not Found",404);
+        } else throw new \Exception("Not Found", 404);
     }
 
     public function deleteAction(Request $request, int $id)
     {
-            $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-            /** @var BaseRepository $repository */
-            $repository = $this->get(substr($route->getOption('repository'),1));
-            if($entity = $repository->getReference($id)) {
-                    return new Response(
-                        $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                            $repository->remove($entity, true)
-                            ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'get']]
-                        ),
-                        200,
-                        ['Content-Type'=> 'application/json']
-                    );
-            } else throw new \Exception("Not Found",404);
+        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
+        /** @var BaseRepository $repository */
+        $repository = $this->get(substr($route->getOption('repository'), 1));
+        if ($entity = $repository->getReference($id)) {
+            return new Response(
+                $this->get('opstalent.api_bundle.serializer_service')->serialize(
+                    $repository->remove($entity, true)
+                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $entity)]
+                ),
+                200,
+                ['Content-Type' => 'application/json']
+            );
+        } else throw new \Exception("Not Found", 404);
     }
 }
