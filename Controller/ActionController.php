@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Form\AbstractType;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Security\Core\Role\Role;
 
 class ActionController extends Controller
 {
@@ -27,7 +29,7 @@ class ActionController extends Controller
                 return new Response(
                     $this->get('opstalent.api_bundle.serializer_service')->serialize(
                         $repository->searchByFilters($form->getData())
-                        ,"json",['groups'=> [$route->getOption('serializerGroup') ? $route->getOption('serializerGroup') : 'list']]
+                        ,"json",['groups'=> $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "list")]
                     ),
                     200,
                     ['Content-Type'=> 'application/json']

@@ -9,3 +9,4 @@ services:
     arguments:
       - ["@serializer.normalizer.object"]
       - ["@serializer.encoder.json"]
+      - "@security.token_storage"
