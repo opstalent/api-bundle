@@ -457,7 +457,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 'methods' => ['GET'],
                 'options' => [
                     'form' => "AppBundle\\Form\\" . $className . "\\FilterType",
-                    'serializerGroup' => 'list',
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
@@ -478,7 +477,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:get'],
                 'methods' => ['GET'],
                 'options' => [
-                    'serializerGroup' => 'get',
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
@@ -499,7 +497,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 'methods' => ['POST'],
                 'options' => [
                     'form' => "AppBundle\\Form\\" . $className . "\\AddType",
-                    'serializerGroup' => 'get',
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
@@ -521,7 +518,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 'methods' => ['PUT'],
                 'options' => [
                     'form' => "AppBundle\\Form\\" . $className . "\\EditType",
-                    'serializerGroup' => 'get',
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
@@ -543,7 +539,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:delete'],
                 'methods' => ['DELETE'],
                 'options' => [
-                    'serializerGroup' => 'get',
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
