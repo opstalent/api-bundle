@@ -12,6 +12,11 @@
       "name" : "Tomasz Piasecki",
       "email" : "tomasz.piasecki@opstalent.it",
       "homepage": "https://github.com/Mojihito"
+    },
+    {
+      "name" : "Patryk Grudniewski",
+      "email" : "patgrudniewski@gmail.com",
+      "homepage": "https://github.com/patgrudniewski"
     }
   ],
   "keywords" : [
@@ -31,9 +36,7 @@
   "autoload" : {
     "psr-0" : {
       "Opstalent\\ApiBundle" : ""
-    }
-  },
-  "autoload": {
+    },
     "psr-4": {
       "Opstalent\\ApiBundle\\" : ""
     },
@@ -43,7 +46,7 @@
   },
   "repositories" : [{
     "type" : "vcs",
-    "url" : "https://github.com/Opstalent/ApiBundle.git"
+    "url" : "https://github.com/opstalent/api-bundle.git"
   }]
 
 }
