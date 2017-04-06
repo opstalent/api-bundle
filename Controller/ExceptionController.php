@@ -22,6 +22,17 @@ class ExceptionController extends BaseExceptionController
             'success' => false,
             'code'    => $exception->getCode(),
             'message' => $exception->getMessage(),
-        ],$exception->getCode());
+        ], $this->getExceptionCode($exception));
+    }
+
+    /**
+     * @param FlattenException $exception
+     * @return int
+     */
+    protected function getExceptionCode(FlattenException $exception) : int
+    {
+        $code = $exception->getCode();
+
+        return array_key_exists($code, JsonResponse::$statusTexts) ? $code : 500;
     }
 }
