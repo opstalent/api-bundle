@@ -27,7 +27,8 @@
   ],
   "require" : {
     "friendsofsymfony/oauth-server-bundle": "^1.5",
-    "friendsofsymfony/user-bundle": "~2.0@dev"
+    "friendsofsymfony/user-bundle": "~2.0@dev",
+    "symfony/serializer": "^3.2"
   },
   "require-dev" : {
     "phpunit/phpunit": "^5.7",
