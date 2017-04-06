@@ -262,7 +262,7 @@ services:
 
 ### 3. Create Forms
 Generator generate 3 forms `AddType`, `EditType` and `FilterType`
-We recommend to separate add form and filter form but separate 
+We recommend to separate add form and filter form but separate. 
 
 #### AddType
 ````php
@@ -365,6 +365,7 @@ class FilterType extends AbstractType
 ````
 ### 4. Create routing
 We like to define routing for endpoint in separate file.
+
 pages.yml
 ````yml
 api_pages_list:
