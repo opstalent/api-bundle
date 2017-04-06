@@ -21,7 +21,8 @@
     "MIT"
   ],
   "require" : {
-    "friendsofsymfony/oauth-server-bundle": "^1.5"
+    "friendsofsymfony/oauth-server-bundle": "^1.5",
+    "friendsofsymfony/user-bundle": "~2.0@dev"
   },
   "suggest": {
     "friendsofsymfony/oauth-server-bundle": "^1.5",

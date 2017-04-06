@@ -28,7 +28,7 @@ class SerializerService extends Serializer
         $this->tokenStorage = $tokenStorage;
     }
 
-    public function generateSerializationGroup(Route $route, $method, object $data=null):array
+    public function generateSerializationGroup(Route $route, $method, $data=null):array
     {
 
         if (!$route->getOption('serializerGroups')) return $method === 'list' ? ["list"] : ['get'];
