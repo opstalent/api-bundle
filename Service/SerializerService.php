@@ -8,18 +8,18 @@
 
 namespace Opstalent\ApiBundle\Service;
 
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Routing\Route;
-use Symfony\Component\Security\Core\Role\Role;
+use Symfony\Component\Security\Core\Role\RoleInterface;
 
 class SerializerService extends Serializer
 {
 
     protected $tokenStorage;
 
-    public function __construct(array $normalizers, array $encoders, TokenStorage $tokenStorage)
+    public function __construct(array $normalizers, array $encoders, TokenStorageInterface $tokenStorage)
     {
         /** @var ObjectNormalizer $normalizer */
         foreach ($normalizers as $normalizer)
@@ -52,7 +52,7 @@ class SerializerService extends Serializer
         return strpos($key,"ROLE_") === 0;
     }
 
-    public function getRole(Role $value)
+    public function getRole(RoleInterface $value)
     {
         return $value->getRole();
     }
