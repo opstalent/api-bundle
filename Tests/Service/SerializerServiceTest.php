@@ -6,7 +6,9 @@
 namespace Opstalent\ApiBundle\Tests\Service;
 
 use Opstalent\ApiBundle\Service\SerializerService;
+use Opstalent\ApiBundle\Tests\Utility\OwnableInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Role\RoleInterface;
 
@@ -16,6 +18,11 @@ class SerializerServiceTest extends TestCase
      * @var SerializerService
      */
     private $serializer;
+
+    /**
+     * @var TokenStorageInterface
+     */
+    private $tokenStorage;
 
     public function setUp()
     {
@@ -51,6 +58,125 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
+     * @covers SerializerService::isOwner
+     * @dataProvider isOwnerProvider
+     *
+     * @param string $user
+     * @param object|null $data
+     * @param Route $route
+     * @param bool $expected
+     */
+    public function testIsOwner(int $user, $data, Route $route, bool $expected)
+    {
+        $reflection = new \ReflectionMethod(SerializerService::class, 'isOwner');
+        $reflection->setAccessible(true);
+        $isOwner = $reflection->invokeArgs($this->serializer, [$user, $data, $route]);
+
+        $this->assertEquals($expected, $isOwner);
+    }
+
+    /**
+     * @return array
+     */
+    public function isOwnerProvider():array
+    {
+        $rawData = [
+            [
+                'user' => 1,
+                'data' => [
+                    'owner' => 1
+                ],
+                'route' => [
+                    'serializerGroups' => [
+                        'owner' => ['me'],
+                    ],
+                ],
+                'expected' => true,
+            ],
+            [
+                'user' => 1,
+                'data' => null,
+                'route' => [
+                    'serializerGroups' => [
+                        'owner' => ['me'],
+                    ],
+                ],
+                'expected' => false,
+            ],
+            [
+                'user' => 2,
+                'data' => [
+                    'owner' => 1
+                ],
+                'route' => [
+                    'serializerGroups' => [
+                        'owner' => ['me'],
+                    ],
+                ],
+                'expected' => false,
+            ],
+            [
+                'user' => 1,
+                'data' => [
+                    'owner' => 1
+                ],
+                'route' => [
+                    'serializerGroups' => [
+                        'ROLE_USER' => 'list',
+                    ],
+                ],
+                'expected' => false,
+            ],
+            [
+                'user' => 1,
+                'data' => [
+                    'owner' => 1
+                ],
+                'route' => [
+                    'serializerGroups' => [
+                    ],
+                ],
+                'expected' => false,
+            ],
+            [
+                'user' => 1,
+                'data' => [
+                    'owner' => 1
+                ],
+                'route' => [
+                ],
+                'expected' => false,
+            ],
+        ];
+
+        $data = [];
+        foreach ($rawData as $row) {
+            $object = null;
+            if (is_array($row['data'])) {
+                $object = \Mockery::mock(OwnableInterface::class)
+                    ->shouldReceive('getOwner')
+                    ->andReturn($row['data']['owner'])
+                    ->mock();
+            }
+
+            $route = \Mockery::mock(Route::class)
+                ->shouldReceive('getOption')
+                ->with('serializerGroups')
+                ->andReturn($row['route']['serializerGroups'])
+                ->mock();
+
+            $data[] = [
+                $row['user'],
+                $object,
+                $route,
+                $row['expected'],
+            ];
+        }
+
+        return $data;
+    }
+
+    /**
      * @return array
      */
     public function isRoleProvider():array
@@ -83,5 +209,21 @@ class SerializerServiceTest extends TestCase
         }
 
         return $roles;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLoggedInUserId():string
+    {
+        return $this->loggedInUserId;
+    }
+
+    /**
+     * @return array
+     */
+    public function getLoggedInUserRoles():array
+    {
+        return $this->loggedInUserRoles;
     }
 }

@@ -30,16 +30,15 @@ class SerializerService extends Serializer
 
     public function generateSerializationGroup(Route $route, $method, $data=null):array
     {
-
-        if (!$route->getOption('serializerGroups')) return $method === 'list' ? ["list"] : ['get'];
-        $user = $this->tokenStorage->getToken()->getUser();
         $serializeGroup = $route->getOption('serializerGroups');
-        if (
-            array_key_exists('owner', $serializeGroup) &&
-            $data &&
-            method_exists($data, 'getOwner') &&
-            $data->getOwner() == $user
-        ) return [$serializeGroup['owner']];
+        if (!$serializeGroup) return $method === 'list' ? ["list"] : ['get'];
+
+        $groups = [];
+        $user = $this->tokenStorage->getToken()->getUser();
+        if ($this->isOwner($user, $data, $route)) {
+            $groups += $serializeGroup['owner'];
+            return $groups;
+        }
 
         $groups = array_intersect($this->getRolesGroup($serializeGroup), $this->getUserRoles());
         if(!empty($groups)) return array_values(array_intersect_key($serializeGroup,array_flip($groups)));
@@ -55,6 +54,24 @@ class SerializerService extends Serializer
     public function getRole(RoleInterface $value)
     {
         return $value->getRole();
+    }
+
+    /**
+     * @param mixed $user
+     * @param object|null $data
+     * @param Route $route
+     * @return array
+     */
+    protected function isOwner($user, $data, Route $route) 
+    {
+        $serializeGroup = $route->getOption('serializerGroups');
+
+        return is_array($serializeGroup) && // is serializeGroup defined?
+            array_key_exists('owner', $serializeGroup) && // is owner serialization allowed for route?
+            $data && // is data defined?
+            method_exists($data, 'getOwner') && // is able to check object owner?
+            $data->getOwner() == $user // is user owner of data object?
+            ;
     }
 
     private function getRolesGroup($serializeGroup)
