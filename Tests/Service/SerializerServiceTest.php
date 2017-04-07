@@ -127,9 +127,38 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
+     * @covers SerializerService::getUserRoles
+     * @dataProvider getUserRolesProvider
+     *
+     * @param array $userRoles
+     */
+    public function testGetUserRoles(array $userRoles)
+    {
+        $this->setLoggedInUserRoles($userRoles);
+
+        $reflection = new \ReflectionMethod(SerializerService::class, 'getUserRoles');
+        $reflection->setAccessible(true);
+        $roles = $reflection->invokeArgs($this->serializer, [$roles]);
+
+        $this->assertEquals($userRoles, $roles);
+    }
+
+    /**
      * @return array
      */
-    public function getRolesGroupProvider()
+    public function getUserRolesProvider():array
+    {
+        return [
+            [['ROLE_TEST', 'ROLE_ADMIN']],
+            [['ROLE_TEST']],
+            [[]],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function getRolesGroupProvider():array
     {
         return [
             [['ROLE_TEST' => '', 'someString' => '', 'ROLE_ADMIN' => ''], ['ROLE_TEST', 'ROLE_ADMIN']],
