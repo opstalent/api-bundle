@@ -111,6 +111,35 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
+     * @covers SerializerService::getRolesGroup
+     * @dataProvider getRolesGroupProvider
+     * 
+     * @param array $serializeGroup
+     * @param array $expected
+     */
+    public function testGetRolesGroup(array $serializeGroup, array $expected)
+    {
+        $reflection = new \ReflectionMethod(SerializerService::class, 'getRolesGroup');
+        $reflection->setAccessible(true);
+        $rolesGroup = $reflection->invokeArgs($this->serializer, [$serializeGroup]);
+
+        $this->assertEquals($expected, $rolesGroup);
+    }
+
+    /**
+     * @return array
+     */
+    public function getRolesGroupProvider()
+    {
+        return [
+            [['ROLE_TEST' => '', 'someString' => '', 'ROLE_ADMIN' => ''], ['ROLE_TEST', 'ROLE_ADMIN']],
+            [['ROLE_TEST' => '', 'someString' => ''], ['ROLE_TEST']],
+            [['someString' => ''], []],
+            [[], []],
+        ];
+    }
+
+    /**
      * @return array
      */
     public function getAclMatchingRolesProvider():array
