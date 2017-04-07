@@ -1,4 +1,4 @@
-# Api-bundle
+# Api-bundle [![Build Status](https://travis-ci.org/opstalent/api-bundle.svg?branch=master)](https://travis-ci.org/opstalent/api-bundle)
 
 This bundle provides various tools to rapidly develop RESTful API's & applications with Symfony 3.x.
 
