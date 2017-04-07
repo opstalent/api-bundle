@@ -9,7 +9,7 @@ Features:
 * OAuth2 - friendsofsymfony/oauth-server-bundle
 
 # Instalation
-`composer require opstalent/api-bundle "~0.1`
+`composer require opstalent/api-bundle "dev-master`
 
 #### Bundle Depend on
  
