@@ -12,6 +12,11 @@
       "name" : "Tomasz Piasecki",
       "email" : "tomasz.piasecki@opstalent.it",
       "homepage": "https://github.com/Mojihito"
+    },
+    {
+      "name" : "Patryk Grudniewski",
+      "email" : "patgrudniewski@gmail.com",
+      "homepage": "https://github.com/patgrudniewski"
     }
   ],
   "keywords" : [
@@ -22,7 +27,12 @@
   ],
   "require" : {
     "friendsofsymfony/oauth-server-bundle": "^1.5",
-    "friendsofsymfony/user-bundle": "~2.0@dev"
+    "friendsofsymfony/user-bundle": "~2.0@dev",
+    "symfony/serializer": "^3.2"
+  },
+  "require-dev" : {
+    "phpunit/phpunit": "^5.7",
+    "mockery/mockery": "^0.9.9"
   },
   "suggest": {
     "friendsofsymfony/oauth-server-bundle": "^1.5",
@@ -31,9 +41,7 @@
   "autoload" : {
     "psr-0" : {
       "Opstalent\\ApiBundle" : ""
-    }
-  },
-  "autoload": {
+    },
     "psr-4": {
       "Opstalent\\ApiBundle\\" : ""
     },
@@ -43,7 +51,7 @@
   },
   "repositories" : [{
     "type" : "vcs",
-    "url" : "https://github.com/Opstalent/ApiBundle.git"
+    "url" : "https://github.com/opstalent/api-bundle.git"
   }]
 
 }
