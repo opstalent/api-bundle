@@ -10,6 +10,7 @@ use Opstalent\ApiBundle\Tests\Utility\OwnableInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+//use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Role\RoleInterface;
 
 class SerializerServiceTest extends TestCase
@@ -24,12 +25,27 @@ class SerializerServiceTest extends TestCase
      */
     private $tokenStorage;
 
+    /**
+     * @var array
+     */
+    private $loggedInUserRoles = [];
+
     public function setUp()
     {
+        $token = \Mockery::mock(TokenInterface::class)
+            ->shouldReceive('getRoles')
+            ->andReturnUsing([$this, 'getLoggedInUserRoles'])
+            ->mock();
+
+        $this->tokenStorage = \Mockery::mock(TokenStorageInterface::class)
+            ->shouldReceive('getToken')
+            ->andReturn($token)
+            ->mock();
+
         $this->serializer = new SerializerService(
             [],
             [],
-            \Mockery::mock(TokenStorageInterface::class)
+            $this->tokenStorage
         );
     }
 
@@ -73,6 +89,99 @@ class SerializerServiceTest extends TestCase
         $isOwner = $reflection->invokeArgs($this->serializer, [$user, $data, $route]);
 
         $this->assertEquals($expected, $isOwner);
+    }
+
+    /**
+     * @covers SerializerService::getAclMatchingRoles
+     * @dataProvider getAclMatchingRolesProvider
+     *
+     * @param RoleInterface[] $roles
+     * @param Route $route
+     * @param array $expected
+     */
+    public function testGetAclMatchingRoles(array $roles, Route $route, array $expected)
+    {
+        $this->setLoggedInUserRoles($roles);
+
+        $reflection = new \ReflectionMethod(SerializerService::class, 'getAclMatchingRoles');
+        $reflection->setAccessible(true);
+        $roles = $reflection->invokeArgs($this->serializer, [$route]);
+
+        $this->assertEquals($expected, $roles);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAclMatchingRolesProvider():array
+    {
+        $rawData = [
+            [
+                'route' => [
+                    'serializerGroups' => [
+                        'ROLE_ADMIN' => 'fullAccess',
+                        'ROLE_TEST' => 'testAccess',
+                    ]
+                ],
+                'roles' => [
+                    'ROLE_ADMIN',
+                ],
+                'expected' => [
+                    'fullAccess',
+                ],
+            ],
+            [
+                'route' => [
+                ],
+                'roles' => [
+                    'ROLE_ADMIN',
+                ],
+                'expected' => [],
+            ],
+            [
+                'route' => [
+                    'serializerGroups' => [
+                        'ROLE_ADMIN' => 'fullAccess',
+                        'ROLE_TEST' => 'testAccess',
+                    ]
+                ],
+                'roles' => [
+                    'ROLE_TEST',
+                ],
+                'expected' => [
+                    'testAccess',
+                ],
+            ],
+            [
+                'route' => [
+                    'serializerGroups' => [
+                        'ROLE_ADMIN' => 'fullAccess',
+                        'ROLE_TEST' => 'testAccess',
+                    ]
+                ],
+                'roles' => [
+                    'ROLE_TEST_ANOTHER',
+                ],
+                'expected' => [],
+            ],
+        ];
+
+        $data = [];
+        foreach ($rawData as $case) {
+            $route = \Mockery::mock(Route::class)
+                ->shouldReceive('getOption')
+                ->with('serializerGroups')
+                ->andReturn($case['route']['serializerGroups'])
+                ->mock();
+
+            $data[] = [
+                $case['roles'],
+                $route,
+                $case['expected'],
+            ];
+        }
+
+        return $data;
     }
 
     /**
@@ -212,18 +321,77 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function getLoggedInUserId():string
+    public function generateSerializationGroupProvider():array
     {
-        return $this->loggedInUserId;
+        $rawData = [
+            [
+                'serializerGroups' => [],
+                'method' => '',
+                'owner' => null,
+                'user_id' => '',
+                'user_roles' => [],
+                'expected' => ['get'],
+            ],
+        ];
+
+        $data = [];
+        foreach ($rawData as $row) {
+            $route = \Mockery::mock(Route::class)
+                ->shouldReceive('getOption')
+                ->with('serializerGroups')
+                ->andReturn($row['serializerGroups'])
+                ->mock();
+
+            $user = null;
+            if (null !== $row['owner']) {
+                $user = \Mockery::mock(OwnableInterface::class)
+                    ->shouldReceive('getOwner')
+                    ->andReturn($row['owner'])
+                    ->mock();
+            }
+
+            $roles = [];
+            foreach ($row['user_roles'] as $role) {
+                $roles[] = \Mockery::mock(RoleInterface::class)
+                    ->shouldReceive('getRole')
+                    ->andReturn($role)
+                    ->mock();
+            }
+
+            $data[] = [
+                $route,
+                $row['method'],
+                $user,
+                $row['user_id'],
+                $roles,
+                $row['expected'],
+            ];
+        }
+
+        return $data;
     }
 
     /**
-     * @return array
+     * @return RoleInterface[]
      */
     public function getLoggedInUserRoles():array
     {
         return $this->loggedInUserRoles;
+    }
+
+    /**
+     * @param array
+     */
+    protected function setLoggedInUserRoles(array $roles)
+    {
+        $this->loggedInUserRoles = [];
+        foreach ($roles as $role) {
+            $this->loggedInUserRoles[] = \Mockery::mock(RoleInterface::class)
+                ->shouldReceive('getRole')
+                ->andReturn($role)
+                ->mock();
+        }
     }
 }

@@ -37,13 +37,16 @@ class SerializerService extends Serializer
         $user = $this->tokenStorage->getToken()->getUser();
         if ($this->isOwner($user, $data, $route)) {
             $groups += $serializeGroup['owner'];
-            return $groups;
         }
 
-        $groups = array_intersect($this->getRolesGroup($serializeGroup), $this->getUserRoles());
-        if(!empty($groups)) return array_values(array_intersect_key($serializeGroup,array_flip($groups)));
-
-        return array_key_exists('all', $serializeGroup) ? [$serializeGroup['all']] : ['list'];
+        $groups += $this->getAclMatchingRoles($route);
+        if (!empty($groups)) {
+            return $groups;
+        } elseif (array_key_exists('all', $serializeGroup)) {
+            return [$serializeGroup['all']];
+        } else {
+            return ['list'];
+        }
     }
 
     public function isRole($value,$key)
@@ -54,6 +57,25 @@ class SerializerService extends Serializer
     public function getRole(RoleInterface $value)
     {
         return $value->getRole();
+    }
+
+    /**
+     * @param Route $route
+     * @return array
+     */
+    protected function getAclMatchingRoles(Route $route):array
+    {
+        $serializeGroup = $route->getOption('serializerGroups');
+        if (!is_array($serializeGroup)) {
+            return [];
+        }
+
+        $groups = array_intersect($this->getRolesGroup($serializeGroup), $this->getUserRoles());
+        if (!empty($groups)) {
+            return array_values(array_intersect_key($serializeGroup, array_flip($groups)));
+        } else {
+            return [];
+        }
     }
 
     /**
