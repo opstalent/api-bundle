@@ -30,11 +30,18 @@ class SerializerServiceTest extends TestCase
      */
     private $loggedInUserRoles = [];
 
+    /**
+     * @var int|null
+     */
+    private $loggedInUserId = null;
+
     public function setUp()
     {
         $token = \Mockery::mock(TokenInterface::class)
             ->shouldReceive('getRoles')
             ->andReturnUsing([$this, 'getLoggedInUserRoles'])
+            ->shouldReceive('getUser')
+            ->andReturnUsing([$this, 'getLoggedInUserId'])
             ->mock();
 
         $this->tokenStorage = \Mockery::mock(TokenStorageInterface::class)
@@ -144,6 +151,62 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
+     * @covers SerializerService::generateSerializationGroup
+     * @dataProvider generateSerializationGroupProvider
+     *
+     * @param Route $route
+     * @param string $method
+     * @param object|null $data
+     * @param array user
+     * @param array $expected
+     */
+    public function testGenerateSerializationGroup(Route $route, string $method, $data, array $user, array $expected)
+    {
+        $this->setLoggedInUserId(array_key_exists('id', $user) ? $user['id'] : null);
+        $this->setLoggedInUserRoles(array_key_exists('roles', $user) ? $user['roles'] : []);
+
+        $roles = $this->serializer->generateSerializationGroup($route, $method, $data);
+        $this->assertEquals($expected, $roles);
+    }
+
+    /**
+     * @return array
+     */
+    public function generateSerializationGroupProvider():array
+    {
+        mt_srand(0);
+        $methods = ['get', 'list', 'another'];
+
+        $aclMatchingRolesData = $this->getAclMatchingRolesProvider();
+        $data = [];
+
+        foreach ($this->isOwnerProvider() as $row) {
+            $method = $methods[mt_rand(0, 2)];
+            $expected = $row[3] ? $row[2]->getOption('serializerGroups')['owner'] : [];
+            $data[] = [$row[2], $method, $row[1], ['id' => $row[0]], $expected];
+
+        }
+
+        foreach ($this->getAclMatchingRolesProvider() as $row) {
+            $method = $methods[mt_rand(0, 2)];
+            $data[] = [$row[1], $method, null, ['roles' => $row[0]], $row[2]];
+        }
+
+        foreach ($data as &$row) {
+            $serializeGroup = $row[0]->getOption('serializerGroups');
+            if (!$serializeGroup) {
+                $row[4] = 'list' == $row[1] ? ['list'] : ['get'];
+            } elseif (empty($row[4])) {
+                $row[4] = [is_array($serializeGroup) && array_key_exists('all', $serializeGroup) ? $serializeGroup['all'] : 'list'];
+            }
+        }
+
+        mt_srand();
+        return $data;
+    }
+
+
+    /**
      * @return array
      */
     public function getUserRolesProvider():array
@@ -215,6 +278,7 @@ class SerializerServiceTest extends TestCase
                     'serializerGroups' => [
                         'ROLE_ADMIN' => 'fullAccess',
                         'ROLE_TEST' => 'testAccess',
+                        'all' => 'globalAccess',
                     ]
                 ],
                 'roles' => [
@@ -379,64 +443,19 @@ class SerializerServiceTest extends TestCase
     }
 
     /**
-     * @return array
-     */
-    public function generateSerializationGroupProvider():array
-    {
-        $rawData = [
-            [
-                'serializerGroups' => [],
-                'method' => '',
-                'owner' => null,
-                'user_id' => '',
-                'user_roles' => [],
-                'expected' => ['get'],
-            ],
-        ];
-
-        $data = [];
-        foreach ($rawData as $row) {
-            $route = \Mockery::mock(Route::class)
-                ->shouldReceive('getOption')
-                ->with('serializerGroups')
-                ->andReturn($row['serializerGroups'])
-                ->mock();
-
-            $user = null;
-            if (null !== $row['owner']) {
-                $user = \Mockery::mock(OwnableInterface::class)
-                    ->shouldReceive('getOwner')
-                    ->andReturn($row['owner'])
-                    ->mock();
-            }
-
-            $roles = [];
-            foreach ($row['user_roles'] as $role) {
-                $roles[] = \Mockery::mock(RoleInterface::class)
-                    ->shouldReceive('getRole')
-                    ->andReturn($role)
-                    ->mock();
-            }
-
-            $data[] = [
-                $route,
-                $row['method'],
-                $user,
-                $row['user_id'],
-                $roles,
-                $row['expected'],
-            ];
-        }
-
-        return $data;
-    }
-
-    /**
      * @return RoleInterface[]
      */
     public function getLoggedInUserRoles():array
     {
         return $this->loggedInUserRoles;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLoggedInUserId():?int
+    {
+        return $this->loggedInUserId;
     }
 
     /**
@@ -451,5 +470,13 @@ class SerializerServiceTest extends TestCase
                 ->andReturn($role)
                 ->mock();
         }
+    }
+
+    /**
+     * @param int
+     */
+    protected function setLoggedInUserId(?int $id)
+    {
+        $this->loggedInUserId = $id;
     }
 }

@@ -42,7 +42,7 @@ class SerializerService extends Serializer
         $groups += $this->getAclMatchingRoles($route);
         if (!empty($groups)) {
             return $groups;
-        } elseif (array_key_exists('all', $serializeGroup)) {
+        } elseif (is_array($serializeGroup) && array_key_exists('all', $serializeGroup)) {
             return [$serializeGroup['all']];
         } else {
             return ['list'];
