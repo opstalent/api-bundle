@@ -8,6 +8,7 @@
 
 namespace Opstalent\ApiBundle\Service;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -30,7 +31,6 @@ class SerializerService extends Serializer
 
     public function generateSerializationGroup(Route $route, $method, $data=null):array
     {
-
         if (!$route->getOption('serializerGroups')) return $method === 'list' ? ["list"] : ['get'];
         $user = $this->tokenStorage->getToken()->getUser();
         $serializeGroup = $route->getOption('serializerGroups');
@@ -38,13 +38,18 @@ class SerializerService extends Serializer
             array_key_exists('owner', $serializeGroup) &&
             $data &&
             method_exists($data, 'getOwner') &&
-            $data->getOwner() == $user
+            $this->isOwner($data->getOwner(), $user)
         ) return [$serializeGroup['owner']];
 
         $groups = array_intersect($this->getRolesGroup($serializeGroup), $this->getUserRoles());
         if(!empty($groups)) return array_values(array_intersect_key($serializeGroup,array_flip($groups)));
 
         return array_key_exists('all', $serializeGroup) ? [$serializeGroup['all']] : ['list'];
+    }
+
+    public function isOwner($owner, $user)
+    {
+        return (((is_array($owner) && in_array($user, (array)$owner))||($owner==$user)));
     }
 
     public function isRole($value,$key)
