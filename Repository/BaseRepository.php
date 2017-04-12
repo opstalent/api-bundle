@@ -129,8 +129,10 @@ class BaseRepository extends EntityRepository
 
     public function remove($data, bool $flush)
     {
+        $this->dispatchEvent('before.remove', $this, $data);
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
+        $this->dispatchEvent('after.remove', $this, $data);
         return $data;
     }
 
