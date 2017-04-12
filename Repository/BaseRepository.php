@@ -143,8 +143,8 @@ class BaseRepository extends EntityRepository
     {
         $this->dispatchEvent('before.persist', $this, $data);
         $this->getEntityManager()->persist($data);
-        $this->dispatchEvent('after.persist',$this, $data);
         if($flush) $this->flush();
+        $this->dispatchEvent('after.persist',$this, $data);
         return $data;
     }
 
