@@ -129,8 +129,10 @@ class BaseRepository extends EntityRepository
 
     public function remove($data, bool $flush)
     {
+        $this->dispatchEvent('before.remove', $this , $data);
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
+        $this->dispatchEvent('after.remove', $this, $data);
         return $data;
     }
 
@@ -164,6 +166,7 @@ class BaseRepository extends EntityRepository
 
     private function dispatchEvent($name,$obj,$data=null)
     {
+
         if($this->dispatcher) $this->dispatcher->dispatch($name, new RepositoryEvent($name,$obj,$data));
     }
 }
