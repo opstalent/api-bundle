@@ -25,7 +25,7 @@ class ActionController extends Controller
         $this->addPaginatorFilters($form);
         foreach ($form->all() as $field => $fieldForm)
         {
-            if(!array_key_exists($field,$request->get($form->getName()))){
+            if(!$request->get($form->getName()) || !array_key_exists($field,$request->get($form->getName()))){
                 $form->remove($field);
             }
         }
@@ -35,7 +35,7 @@ class ActionController extends Controller
             $repository = $this->get(substr($route->getOption('repository'), 1));
             return new Response(
                 $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $repository->searchByFilters($form->getData())
+                    $repository->searchByFilters(is_array($form->getData()) ? $form->getData() : [])
                     , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "list")]
                 ),
                 200,
