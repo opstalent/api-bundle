@@ -81,17 +81,18 @@ class BaseRepository extends EntityRepository
 
     public function searchByFilters(array $data):array
     {
+        dump($data);
         $this->dispatchEvent('before.search.by.filter', $this);
         $qb = $this->getQueryBuilder();
-        if(in_array('limit',$data)) {
+        if(array_key_exists('limit',$data)) {
             $this->setLimit($data['limit'],$qb);
             unset($data['limit']);
         }
-        if(in_array('offset',$data)) {
+        if(array_key_exists('offset',$data)) {
             $this->setOffset($data['offset'],$qb);
             unset($data['offset']);
         }
-        if(in_array('order',$data) && in_array('orderBy',$data)) {
+        if(array_key_exists('order',$data) && array_key_exists('orderBy',$data)) {
             $this->setOrder($data['order'],$data['orderBy'], $qb);
             unset($data['order']);
             unset($data['orderBy']);
@@ -99,6 +100,7 @@ class BaseRepository extends EntityRepository
 
         foreach ($data as $filter => $value)
         {
+            if($filter === 'count') continue;
             if(array_key_exists($filter,$this->filters)) {
                 $func = $this->filters[$filter];
                 $this->$func($value,$qb);
@@ -110,7 +112,7 @@ class BaseRepository extends EntityRepository
         $this->dispatchEvent('after.search.by.filter', $this);
 
         $query = $qb->getQuery();
-        if(in_array('count', $data)) {
+        if(array_key_exists('count', $data)) {
             $paginator  = new \Doctrine\ORM\Tools\Pagination\Paginator($query);
             return [
                 'list' => $query->getResult(),

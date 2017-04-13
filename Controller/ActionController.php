@@ -4,6 +4,8 @@ namespace Opstalent\ApiBundle\Controller;
 
 use Opstalent\ApiBundle\Repository\BaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,8 +22,8 @@ class ActionController extends Controller
     {
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
         $form = $this->createForm($route->getOption('form'));
-
-        $form->submit($request->query->all());
+        $this->addPaginatorFilters($form);
+        $form->handleRequest($request);
         if (($form->isSubmitted() && $form->isValid()) || $form->isEmpty()) {
             /** @var BaseRepository $repository */
             $repository = $this->get(substr($route->getOption('repository'), 1));
@@ -125,5 +127,16 @@ class ActionController extends Controller
                 ['Content-Type' => 'application/json']
             );
         } else throw new \Exception("Not Found", 404);
+    }
+
+    protected function addPaginatorFilters(Form $form)
+    {
+        $form
+            ->add('page', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('limit', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('column', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('sort', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('count', TextType::class, ['required'=> false, 'mapped'=> true])
+        ;
     }
 }
