@@ -81,7 +81,6 @@ class BaseRepository extends EntityRepository
 
     public function searchByFilters(array $data):array
     {
-        dump($data);
         $this->dispatchEvent('before.search.by.filter', $this);
         $qb = $this->getQueryBuilder();
         if(array_key_exists('limit',$data)) {
