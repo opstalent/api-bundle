@@ -126,7 +126,7 @@ class ActionController extends Controller
         if ($entity = $repository->getReference($id)) {
             return new Response(
                 $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $repository->remove($entity, true)
+                    $repository->remove($entity, true, $request->request->all())
                     , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $entity)]
                 ),
                 200,
