@@ -12,7 +12,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
-use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Opstalent\SecurityBundle\Event\RepositoryEvent;
 
 class BaseRepository extends EntityRepository
@@ -38,7 +38,7 @@ class BaseRepository extends EntityRepository
         $this->reflect = new ReflectionClass($entity);
     }
 
-    public function setEventDispatcher(TraceableEventDispatcher $dispatcher)
+    public function setEventDispatcher(EventDispatcherInterface $dispatcher)
     {
         $this->dispatcher = $dispatcher;
     }
