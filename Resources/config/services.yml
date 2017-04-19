@@ -4,9 +4,11 @@ services:
     tags:
       - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 100 }
 
+  opstalent.api_bundle.normalizer.datetime:
+    class: Opstalent\ApiBundle\Service\DateTimeNormalizerService
   opstalent.api_bundle.serializer_service:
     class: Opstalent\ApiBundle\Service\SerializerService
     arguments:
-      - ["@serializer.normalizer.object"]
+      - ["@opstalent.api_bundle.normalizer.datetime", "@serializer.normalizer.object"]
       - ["@serializer.encoder.json"]
       - "@security.token_storage"
