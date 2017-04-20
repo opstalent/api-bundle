@@ -75,7 +75,7 @@ class ActionController extends Controller
             return new Response(
                 $this->get('opstalent.api_bundle.serializer_service')->serialize(
                     $repository->persist($form->getData(), true)
-                    , "json", ['enable_max_depth' => true, 'groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get")]
+                    , "json", ['enable_max_depth' => true, 'groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $form->getData())]
                 ),
                 200,
                 ['Content-Type' => 'application/json']
