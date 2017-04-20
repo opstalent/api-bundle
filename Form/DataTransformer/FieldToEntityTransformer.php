@@ -5,6 +5,7 @@ namespace Opstalent\ApiBundle\Form\DataTransformer;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 
 /**
  * Class FieldToEntityTransformer
@@ -40,8 +41,8 @@ class FieldToEntityTransformer implements DataTransformerInterface
             return '';
         }
 
-        $getter = "get". ucfirst($this->field);
-        return $object->$getter();
+        $propertyAccessor = PropertyAccess::createPropertyAccessor();
+        return $propertyAccessor->getValue($object, $this->field);
     }
 
 
