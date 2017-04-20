@@ -26,8 +26,10 @@
     "MIT"
   ],
   "require" : {
+    "doctrine/orm": "^2.5",
     "friendsofsymfony/oauth-server-bundle": "^1.5",
     "friendsofsymfony/user-bundle": "~2.0@dev",
+    "symfony/form": "^3.2",
     "symfony/serializer": "^3.2"
   },
   "require-dev" : {
