@@ -25,5 +25,10 @@ class OpstalentApiExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $container->setParameter( 'opstalent_api.generator.ignore', $config['generator']['ignore'] );
         $loader->load('services.yml');
+
+        $normalizerDef = $container->getDefinition('opstalent.api_bundle.normalizer.datetime');
+        $normalizerDef->setArguments([
+            $config['serializer']['normalizer']['datetime']['datetime_format']
+        ]);
     }
 }

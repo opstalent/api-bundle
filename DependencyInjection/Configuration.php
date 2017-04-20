@@ -29,6 +29,22 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('serializer')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('normalizer')
+                        ->addDefaultsIfNotSet()
+                            ->children()
+                                ->arrayNode('datetime')
+                                ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('datetime_format')->defaultValue('Y-m-d\TH:i:sO')->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
 
