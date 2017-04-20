@@ -122,7 +122,7 @@ class ActionController extends Controller
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
         /** @var BaseRepository $repository */
         $repository = $this->get(substr($route->getOption('repository'), 1));
-        if ($entity = $repository->getReference($id)) {
+        if ($entity = $repository->find($id)) {
             return new Response(
                 $this->get('opstalent.api_bundle.serializer_service')->serialize(
                     $repository->remove($entity, true, $request->request->all())
