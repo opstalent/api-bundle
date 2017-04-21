@@ -10,19 +10,20 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ExceptionController extends BaseExceptionController
 {
-
     public function __construct()
     {
-//        parent::__construct($twig,$debug);
+        // DO NOT RUN parent::__construct()
     }
 
     public function showExceptionAction(Request $request, FlattenException $exception, DebugLoggerInterface $logger = null)
     {
+        $code = $this->getExceptionCode($exception);
+
         return new JsonResponse([
             'success' => false,
-            'code'    => $exception->getCode(),
+            'code'    => $code,
             'message' => $exception->getMessage(),
-        ], $this->getExceptionCode($exception));
+        ], $code);
     }
 
     /**
@@ -32,7 +33,14 @@ class ExceptionController extends BaseExceptionController
     protected function getExceptionCode(FlattenException $exception) : int
     {
         $code = $exception->getCode();
+        if (array_key_exists($code, JsonResponse::$statusTexts)) {
+            return $code;
+        }
 
-        return array_key_exists($code, JsonResponse::$statusTexts) ? $code : 500;
+        if ($exception->getPrevious() && $exception->getPrevious() instanceof FlattenException) {
+            return $this->getExceptionCode($exception->getPrevious());
+        }
+
+        return 500;
     }
 }
