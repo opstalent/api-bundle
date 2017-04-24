@@ -2,6 +2,8 @@
 
 namespace Opstalent\ApiBundle\Controller;
 
+use Opstalent\ApiBundle\Event\ApiEvent;
+use Opstalent\ApiBundle\Event\ApiEvents;
 use Opstalent\ApiBundle\Repository\BaseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -30,6 +32,7 @@ class ActionController extends Controller
             }
         }
         $form->handleRequest($request);
+        $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
         if (($form->isSubmitted() && $form->isValid()) || $form->isEmpty()) {
             /** @var BaseRepository $repository */
             $repository = $this->get(substr($route->getOption('repository'), 1));
@@ -69,6 +72,7 @@ class ActionController extends Controller
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
         $form = $this->createForm($route->getOption('form'));
         $form->handleRequest($request);
+        $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
         if (($form->isSubmitted() && $form->isValid())) {
             /** @var BaseRepository $repository */
             $repository = $this->get(substr($route->getOption('repository'), 1));
@@ -100,6 +104,7 @@ class ActionController extends Controller
                     }
                 }
             $form->handleRequest($request);
+            $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
             if ($form->isSubmitted() && $form->isValid()) {
 
                 return new Response(
