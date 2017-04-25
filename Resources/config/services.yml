@@ -12,6 +12,11 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+  kernel.event_subscriber.response_wrapper:
+    class: Opstalent\ApiBundle\EventListener\ResponseWrapperSubscriber
+    tags:
+      - { name: kernel.event_subscriber }
+
   kernel.event_subscriber.api.annotation_resolver:
     class: Opstalent\ApiBundle\EventListener\AnnotationResolverSubscriber
     arguments:
