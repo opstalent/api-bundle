@@ -7,6 +7,7 @@ use AppBundle\Entity\User;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
@@ -61,7 +62,12 @@ class BaseRepository extends EntityRepository
             return null;
         }
         $docInfo = $this->docReader->getPropertyAnnotations($this->reflect->getProperty($property));
-        return (method_exists($docInfo[0],"type")) ? $docInfo[0]->type : 'string';
+        if($docInfo[0] instanceof Column) {
+            return $docInfo[0]->type;
+        } else {
+            return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
+        }
+
     }
 
     public function setLimit(int $limit, QueryBuilder $qb):QueryBuilder
