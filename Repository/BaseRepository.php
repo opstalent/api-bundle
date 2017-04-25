@@ -82,7 +82,7 @@ class BaseRepository extends EntityRepository
 
     public function setOrder(string $order='ASC', string $orderBy, QueryBuilder $qb):QueryBuilder
     {
-        return $qb->orderBy($orderBy,$order);
+        return $qb->orderBy($this->repositoryAlias . "." . $orderBy,$order);
     }
 
     public function searchByFilters(array $data):array
