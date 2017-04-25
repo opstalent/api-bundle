@@ -142,10 +142,10 @@ class ActionController extends Controller
     protected function addPaginatorFilters(Form $form)
     {
         $form
-            ->add('page', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('offset', TextType::class, ['required'=> false, 'mapped'=> true])
             ->add('limit', TextType::class, ['required'=> false, 'mapped'=> true])
-            ->add('column', TextType::class, ['required'=> false, 'mapped'=> true])
-            ->add('sort', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('orderBy', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('order', TextType::class, ['required'=> false, 'mapped'=> true])
             ->add('count', TextType::class, ['required'=> false, 'mapped'=> true])
         ;
     }
