@@ -4,6 +4,13 @@ services:
     tags:
       - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 100 }
 
+  kernel.event_subscriber.api.annotation_resolver:
+    class: Opstalent\ApiBundle\EventListener\AnnotationResolverSubscriber
+    arguments:
+      - "@annotation_reader"
+    tags:
+      - { name: kernel.event_subscriber }
+
   opstalent.api_bundle.normalizer.datetime:
     class: Opstalent\ApiBundle\Service\DateTimeNormalizerService
   opstalent.api_bundle.serializer_service:
