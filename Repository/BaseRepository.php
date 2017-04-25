@@ -62,12 +62,13 @@ class BaseRepository extends EntityRepository
             return null;
         }
         $docInfo = $this->docReader->getPropertyAnnotations($this->reflect->getProperty($property));
-        if($docInfo[0] instanceof Column) {
-            return $docInfo[0]->type;
-        } else {
-            return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
-        }
+        return $this->parseDocInfo($docInfo);
+    }
 
+    public function parseDocInfo(array $docInfo): string
+    {
+        if($docInfo[count($docInfo)-2] instanceof Column) return $docInfo[count($docInfo)-2]->type;
+        return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
     }
 
     public function setLimit(int $limit, QueryBuilder $qb):QueryBuilder
@@ -164,6 +165,14 @@ class BaseRepository extends EntityRepository
             case 'string':
                 $ex = $qb->expr()->like($this->repositoryAlias . '.' . $property, $qb->expr()->literal('%' . $value . '%'));
                 return $qb->andWhere($ex);
+                break;
+            case 'datetime':
+                /** @var \DateTime $value */
+                $exgte = $qb->expr()->gte($this->repositoryAlias . '.' . $property, $value);
+                $to = clone $value;
+                $to->setTime($to->format("H"), $to->format("i"),59);
+                $qb->andWhere($this->repositoryAlias . '.' . $property . ' >= :' . $property)->setParameter($property, $value);
+                return $qb->andWhere($this->repositoryAlias . '.' . $property . ' <= :to' . $property)->setParameter('to'.$property, $to);;
                 break;
             default:
                 return $qb->andWhere($this->repositoryAlias . '.' . $property . ' = :' . $property)->setParameter($property, $value);
