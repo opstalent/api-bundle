@@ -17,6 +17,14 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+  kernel.event_subscriber.repository_caller:
+    class: Opstalent\ApiBundle\EventListener\RepositoryCallerSubscriber
+    arguments:
+      - "@router"
+      - "@service_container"
+    tags:
+      - { name: kernel.event_subscriber }
+
   kernel.event_subscriber.api.annotation_resolver:
     class: Opstalent\ApiBundle\EventListener\AnnotationResolverSubscriber
     arguments:
