@@ -25,6 +25,14 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+  kernel.event_subscriber.param_resolver:
+    class: Opstalent\ApiBundle\EventListener\ParamResolverSubscriber
+    arguments:
+      - "@router"
+      - "@service_container"
+    tags:
+      - { name: kernel.event_subscriber }
+
   kernel.event_subscriber.api.annotation_resolver:
     class: Opstalent\ApiBundle\EventListener\AnnotationResolverSubscriber
     arguments:
