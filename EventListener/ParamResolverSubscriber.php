@@ -6,6 +6,7 @@ use Opstalent\ApiBundle\Annotation\ParamResolver;
 use Opstalent\ApiBundle\Repository\BaseRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\RouterInterface;
@@ -47,7 +48,6 @@ class ParamResolverSubscriber implements EventSubscriberInterface
 
     /**
      * @param FilterControllerArgumentsEvent $event
-     * @throws \LogicException
      * @throws \Exception
      */
     public function resolveParams(FilterControllerEvent $event)
@@ -58,14 +58,6 @@ class ParamResolverSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $filterValue = $request->attributes->get($annotation->queryParam);
-        if (null == $filterValue) {
-            throw new \LogicException(sprintf(
-                'Query param "%s" not found in the request',
-                $annotation->queryParam
-            ));
-        }
-
         if (!$this->verifyMethodParams($annotation, $event->getController())) {
             throw new \LogicException(string(
                 'Controller param "%s" do not exist',
@@ -73,6 +65,24 @@ class ParamResolverSubscriber implements EventSubscriberInterface
             ));
         }
 
+        $repository = $this->extractRepository($request);
+        $entity = $repository->findOneBy([
+            $annotation->entityField => $this->extractFilterValue($request, $annotation),
+        ]);
+        if (null === $entity) {
+            throw new \Exception ('Entity  not found', 404);
+        }
+
+        $request->attributes->set($annotation->methodParam, $entity);
+    }
+
+    /**
+     * @param Request $request
+     * @return BaseRepository
+     * @throws \LogicException
+     */
+    private function extractRepository(Request $request) : BaseRepository
+    {
         $route = $this->router->getRouteCollection()->get($request->attributes->get('_route'));
         $repository = $this->container->get(substr($route->getOption('repository'), 1));
         if (!$repository instanceof BaseRepository) {
@@ -83,14 +93,26 @@ class ParamResolverSubscriber implements EventSubscriberInterface
             ));
         }
 
-        $entity = $repository->findOneBy([
-            $annotation->entityField => $filterValue,
-        ]);
-        if (null === $entity) {
-            throw new \Exception ('Entity  not found', 404);
+        return $repository;
+    }
+
+    /**
+     * @param Request $request
+     * @param ParamResolver $annotation
+     * @return mixed
+     * @throws \LogicException
+     */
+    private function extractFilterValue(Request $request, ParamResolver $annotation)
+    {
+        $filterValue = $request->attributes->get($annotation->queryParam);
+        if (null == $filterValue) {
+            throw new \LogicException(sprintf(
+                'Query param "%s" not found in the request',
+                $annotation->queryParam
+            ));
         }
 
-        $request->attributes->set($annotation->methodParam, $entity);
+        return $filterValue;
     }
 
     /**
