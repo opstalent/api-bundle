@@ -4,6 +4,42 @@ services:
     tags:
       - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 100 }
 
+  kernel.event_subscriber.response_serializer:
+    class: Opstalent\ApiBundle\EventListener\ResponseSerializerSubscriber
+    arguments:
+      - "@router"
+      - "@opstalent.api_bundle.serializer_service"
+    tags:
+      - { name: kernel.event_subscriber }
+
+  kernel.event_subscriber.response_wrapper:
+    class: Opstalent\ApiBundle\EventListener\ResponseWrapperSubscriber
+    tags:
+      - { name: kernel.event_subscriber }
+
+  kernel.event_subscriber.repository_caller:
+    class: Opstalent\ApiBundle\EventListener\RepositoryCallerSubscriber
+    arguments:
+      - "@router"
+      - "@service_container"
+    tags:
+      - { name: kernel.event_subscriber }
+
+  kernel.event_subscriber.param_resolver:
+    class: Opstalent\ApiBundle\EventListener\ParamResolverSubscriber
+    arguments:
+      - "@router"
+      - "@service_container"
+    tags:
+      - { name: kernel.event_subscriber }
+
+  kernel.event_subscriber.api.annotation_resolver:
+    class: Opstalent\ApiBundle\EventListener\AnnotationResolverSubscriber
+    arguments:
+      - "@annotation_reader"
+    tags:
+      - { name: kernel.event_subscriber }
+
   opstalent.api_bundle.normalizer.datetime:
     class: Opstalent\ApiBundle\Service\DateTimeNormalizerService
   opstalent.api_bundle.serializer_service:

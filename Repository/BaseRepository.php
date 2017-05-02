@@ -135,12 +135,12 @@ class BaseRepository extends EntityRepository
         return $this->getEntityManager()->getReference($this->repositoryName, $id);
     }
 
-    public function remove($data, bool $flush=true, array $params=[])
+    public function remove($data, bool $flush = true)
     {
-        $this->dispatchEvent('before.remove', $this , $data, $params);
+        $this->dispatchEvent('before.remove', $this , $data);
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
-        $this->dispatchEvent('after.remove', $this, $data, $params);
+        $this->dispatchEvent('after.remove', $this, $data);
         return $data;
     }
 
@@ -182,7 +182,8 @@ class BaseRepository extends EntityRepository
 
     private function dispatchEvent($name,$obj,$data=null,$params=[])
     {
-
-        if($this->dispatcher) $this->dispatcher->dispatch($name, new RepositoryEvent($name,$obj,$data,$params));
+        if($this->dispatcher) {
+            $this->dispatcher->dispatch($name, new RepositoryEvent($name, $obj, $data));
+        }
     }
 }
