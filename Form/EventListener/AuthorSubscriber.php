@@ -22,7 +22,12 @@ class AuthorSubscriber implements EventSubscriberInterface
     /**
      * @var string
      */
-    private $userFieldName;
+    private $target;
+
+    /**
+     * @var string|null
+     */
+    private $source;
 
     /**
      * {@inheritdoc}
@@ -36,12 +41,14 @@ class AuthorSubscriber implements EventSubscriberInterface
 
     /**
      * @param TokenStorageInterface $tokenStorage
-     * @param string $field
+     * @param string $target
+     * @param string $source
      */
-    public function __construct(TokenStorageInterface $tokenStorage, string $field)
+    public function __construct(TokenStorageInterface $tokenStorage, string $target, $source = null)
     {
         $this->tokenStorage = $tokenStorage;
-        $this->userFieldName = $field;
+        $this->target = $target;
+        $this->source = $source;
     }
 
     /**
@@ -53,7 +60,13 @@ class AuthorSubscriber implements EventSubscriberInterface
         $user = $this->tokenStorage->getToken()->getUser();
         $propertyAccess = PropertyAccess::createPropertyAccessor();
 
-        $propertyAccess->setValue($data, $this->userFieldName, $user);
+        if (null === $this->source) {
+            $item = $user;
+        } else {
+            $item = $propertyAccess->getValue($user, $this->source);
+        }
+
+        $propertyAccess->setValue($data, $this->target, $item);
         $event->setData($data);
     }
 }
