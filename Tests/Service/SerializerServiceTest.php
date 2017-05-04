@@ -10,7 +10,6 @@ use Opstalent\ApiBundle\Tests\Utility\OwnableInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-//use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Role\RoleInterface;
 
 class SerializerServiceTest extends TestCase
@@ -290,15 +289,9 @@ class SerializerServiceTest extends TestCase
 
         $data = [];
         foreach ($rawData as $case) {
-            $route = \Mockery::mock(Route::class)
-                ->shouldReceive('getOption')
-                ->with('serializerGroups')
-                ->andReturn($case['route']['serializerGroups'])
-                ->mock();
-
             $data[] = [
                 $case['roles'],
-                $route,
+                $this->mockRoute($case['route']),
                 $case['expected'],
             ];
         }
@@ -390,16 +383,10 @@ class SerializerServiceTest extends TestCase
                     ->mock();
             }
 
-            $route = \Mockery::mock(Route::class)
-                ->shouldReceive('getOption')
-                ->with('serializerGroups')
-                ->andReturn($row['route']['serializerGroups'])
-                ->mock();
-
             $data[] = [
                 $row['user'],
                 $object,
-                $route,
+                $this->mockRoute($row['route']),
                 $row['expected'],
             ];
         }
@@ -456,6 +443,21 @@ class SerializerServiceTest extends TestCase
     public function getLoggedInUserId():?int
     {
         return $this->loggedInUserId;
+    }
+
+    /**
+     * @param array $params
+     * @return Route
+     */
+    protected function mockRoute(array $options) : Route
+    {
+        $route = \Mockery::mock(Route::class)
+            ->shouldReceive('getOption')
+            ->with('serializerGroups')
+            ->andReturn(array_key_exists('serializerGroups', $options) ? $options['serializerGroups'] : null)
+            ->mock();
+
+        return $route;
     }
 
     /**
