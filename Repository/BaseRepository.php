@@ -7,12 +7,13 @@ use AppBundle\Entity\User;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
-use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Opstalent\SecurityBundle\Event\RepositoryEvent;
 
 class BaseRepository extends EntityRepository
@@ -38,7 +39,7 @@ class BaseRepository extends EntityRepository
         $this->reflect = new ReflectionClass($entity);
     }
 
-    public function setEventDispatcher(TraceableEventDispatcher $dispatcher)
+    public function setEventDispatcher(EventDispatcherInterface $dispatcher)
     {
         $this->dispatcher = $dispatcher;
     }
@@ -61,7 +62,13 @@ class BaseRepository extends EntityRepository
             return null;
         }
         $docInfo = $this->docReader->getPropertyAnnotations($this->reflect->getProperty($property));
-        return (method_exists($docInfo[0],"type")) ? $docInfo[0]->type : 'string';
+        return $this->parseDocInfo($docInfo);
+    }
+
+    public function parseDocInfo(array $docInfo): string
+    {
+        if($docInfo[count($docInfo)-2] instanceof Column) return $docInfo[count($docInfo)-2]->type;
+        return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
     }
 
     public function setLimit(int $limit, QueryBuilder $qb):QueryBuilder
@@ -76,22 +83,22 @@ class BaseRepository extends EntityRepository
 
     public function setOrder(string $order='ASC', string $orderBy, QueryBuilder $qb):QueryBuilder
     {
-        return $qb->orderBy($orderBy,$order);
+        return $qb->orderBy($this->repositoryAlias . "." . $orderBy,$order);
     }
 
     public function searchByFilters(array $data):array
     {
         $this->dispatchEvent('before.search.by.filter', $this);
         $qb = $this->getQueryBuilder();
-        if(in_array('limit',$data)) {
+        if(array_key_exists('limit',$data)) {
             $this->setLimit($data['limit'],$qb);
             unset($data['limit']);
         }
-        if(in_array('offset',$data)) {
+        if(array_key_exists('offset',$data)) {
             $this->setOffset($data['offset'],$qb);
             unset($data['offset']);
         }
-        if(in_array('order',$data) && in_array('orderBy',$data)) {
+        if(array_key_exists('order',$data) && array_key_exists('orderBy',$data)) {
             $this->setOrder($data['order'],$data['orderBy'], $qb);
             unset($data['order']);
             unset($data['orderBy']);
@@ -99,6 +106,7 @@ class BaseRepository extends EntityRepository
 
         foreach ($data as $filter => $value)
         {
+            if($filter === 'count') continue;
             if(array_key_exists($filter,$this->filters)) {
                 $func = $this->filters[$filter];
                 $this->$func($value,$qb);
@@ -110,7 +118,7 @@ class BaseRepository extends EntityRepository
         $this->dispatchEvent('after.search.by.filter', $this);
 
         $query = $qb->getQuery();
-        if(in_array('count', $data)) {
+        if(array_key_exists('count', $data)) {
             $paginator  = new \Doctrine\ORM\Tools\Pagination\Paginator($query);
             return [
                 'list' => $query->getResult(),
@@ -127,10 +135,12 @@ class BaseRepository extends EntityRepository
         return $this->getEntityManager()->getReference($this->repositoryName, $id);
     }
 
-    public function remove($data, bool $flush)
+    public function remove($data, bool $flush = true)
     {
+        $this->dispatchEvent('before.remove', $this , $data);
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
+        $this->dispatchEvent('after.remove', $this, $data);
         return $data;
     }
 
@@ -143,8 +153,8 @@ class BaseRepository extends EntityRepository
     {
         $this->dispatchEvent('before.persist', $this, $data);
         $this->getEntityManager()->persist($data);
-        $this->dispatchEvent('after.persist',$this, $data);
         if($flush) $this->flush();
+        $this->dispatchEvent('after.persist',$this, $data);
         return $data;
     }
 
@@ -156,14 +166,24 @@ class BaseRepository extends EntityRepository
                 $ex = $qb->expr()->like($this->repositoryAlias . '.' . $property, $qb->expr()->literal('%' . $value . '%'));
                 return $qb->andWhere($ex);
                 break;
+            case 'datetime':
+                /** @var \DateTime $value */
+                $exgte = $qb->expr()->gte($this->repositoryAlias . '.' . $property, $value);
+                $to = clone $value;
+                $to->setTime($to->format("H"), $to->format("i"),59);
+                $qb->andWhere($this->repositoryAlias . '.' . $property . ' >= :' . $property)->setParameter($property, $value);
+                return $qb->andWhere($this->repositoryAlias . '.' . $property . ' <= :to' . $property)->setParameter('to'.$property, $to);;
+                break;
             default:
                 return $qb->andWhere($this->repositoryAlias . '.' . $property . ' = :' . $property)->setParameter($property, $value);
                 break;
         }
     }
 
-    private function dispatchEvent($name,$obj,$data=null)
+    private function dispatchEvent($name,$obj,$data=null,$params=[])
     {
-        if($this->dispatcher) $this->dispatcher->dispatch($name, new RepositoryEvent($name,$obj,$data));
+        if($this->dispatcher) {
+            $this->dispatcher->dispatch($name, new RepositoryEvent($name, $obj, $data));
+        }
     }
 }

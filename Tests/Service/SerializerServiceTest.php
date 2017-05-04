@@ -144,7 +144,7 @@ class SerializerServiceTest extends TestCase
 
         $reflection = new \ReflectionMethod(SerializerService::class, 'getUserRoles');
         $reflection->setAccessible(true);
-        $roles = $reflection->invokeArgs($this->serializer, [$roles]);
+        $roles = $reflection->invokeArgs($this->serializer, [$userRoles]);
 
         $this->assertEquals($userRoles, $roles);
     }

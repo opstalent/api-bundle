@@ -2,128 +2,112 @@
 
 namespace Opstalent\ApiBundle\Controller;
 
-use Opstalent\ApiBundle\Repository\BaseRepository;
+use Opstalent\ApiBundle\Annotation as API;
+use Opstalent\ApiBundle\Event\ApiEvent;
+use Opstalent\ApiBundle\Event\ApiEvents;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Form\AbstractType;
-use Nelmio\ApiDocBundle\Annotation\ApiDoc;
-use Symfony\Component\Routing\Route;
-use Symfony\Component\Security\Core\Role\Role;
 
+/**
+ * @API\Response(class="Symfony\Component\HttpFoundation\JsonResponse")
+ */
 class ActionController extends Controller
 {
 
+    /**
+     * @API\Serializable(method="list")
+     * @API\RepositoryAction(method="searchByFilters")
+     */
     public function listAction(Request $request)
     {
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
         $form = $this->createForm($route->getOption('form'));
-
-        $form->submit($request->query->all());
+        $this->addPaginatorFilters($form);
+        foreach ($form->all() as $field => $fieldForm)
+        {
+            if(!$request->get($form->getName()) || !array_key_exists($field,$request->get($form->getName()))){
+                $form->remove($field);
+            }
+        }
+        $form->handleRequest($request);
+        $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
         if (($form->isSubmitted() && $form->isValid()) || $form->isEmpty()) {
-            /** @var BaseRepository $repository */
-            $repository = $this->get(substr($route->getOption('repository'), 1));
-            return new Response(
-                $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $repository->searchByFilters($form->getData())
-                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "list")]
-                ),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return is_array($form->getData()) ? $form->getData() : [];
         } else {
             throw new \Exception((string)$form->getErrors(true, false), 400);
         }
     }
 
-    public function getAction(Request $request, int $id)
+    /**
+     * @API\ParamResolver
+     * @API\Serializable(method="get")
+     */
+    public function getAction($entity)
     {
-        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-        /** @var BaseRepository $repository */
-        $repository = $this->get(substr($route->getOption('repository'), 1));
-        $data = $repository->find($id);
-        if ($data) {
-            return new Response(
-                $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $data
-                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $data)]
-                ),
-                200,
-                ['Content-Type' => 'application/json']
-            );
-        } else throw new \Exception("Not Found", 404);
+        return $entity;
     }
 
+    /**
+     * @API\Serializable(method="get")
+     * @API\RepositoryAction(method="persist", params={true})
+     */
     public function postAction(Request $request)
     {
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
         $form = $this->createForm($route->getOption('form'));
         $form->handleRequest($request);
-
+        $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
         if (($form->isSubmitted() && $form->isValid())) {
-            /** @var BaseRepository $repository */
-            $repository = $this->get(substr($route->getOption('repository'), 1));
-            return new Response(
-                $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $repository->persist($form->getData(), true)
-                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get")]
-                ),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return $form->getData();
         } else {
             throw new \Exception((string)$form->getErrors(true, true), 400);
         }
     }
 
-    public function putAction(Request $request, int $id)
+    /**
+     * @API\ParamResolver
+     * @API\Serializable(method="get")
+     * @API\RepositoryAction(method="persist", params={true})
+     */
+    public function putAction(Request $request, $entity)
     {
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
 
-        /** @var BaseRepository $repository */
-        $repository = $this->get(substr($route->getOption('repository'), 1));
-        if ($entity = $repository->find($id)) {
-            $form = $this->createForm($route->getOption('form'), $entity);
-            foreach ($form->all() as $field => $fieldForm)
-                {
-                    if(!array_key_exists($field,$request->request->all()[$form->getName()])){
-                        $form->remove($field);
-                    }
-                }
-            $form->handleRequest($request);
-            if ($form->isSubmitted() && $form->isValid()) {
-
-                return new Response(
-                    $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                        $repository->persist($form->getData(), true)
-                        , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $form->getData())]
-                    ),
-                    200,
-                    ['Content-Type' => 'application/json']
-                );
-            } else {
-                throw new \Exception((string)$form->getErrors(true, false), 404);
+        $form = $this->createForm($route->getOption('form'), $entity);
+        foreach ($form->all() as $field => $fieldForm) {
+            if (!array_key_exists($field, $request->request->get($form->getName()))) {
+                $form->remove($field);
             }
-
-        } else throw new \Exception("Not Found", 404);
+        }
+        $form->handleRequest($request);
+        $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
+        if ($form->isSubmitted() && $form->isValid()) {
+            return $form->getData();
+        } else {
+            throw new \Exception((string) $form->getErrors(true, false), 404);
+        }
     }
 
-    public function deleteAction(Request $request, int $id)
+    /**
+     * @API\ParamResolver
+     * @API\Serializable(method="get")
+     * @API\RepositoryAction(method="remove", params={true})
+     */
+    public function deleteAction(Request $request, $entity)
     {
-        $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
-        /** @var BaseRepository $repository */
-        $repository = $this->get(substr($route->getOption('repository'), 1));
-        if ($entity = $repository->getReference($id)) {
-            return new Response(
-                $this->get('opstalent.api_bundle.serializer_service')->serialize(
-                    $repository->remove($entity, true)
-                    , "json", ['groups' => $this->get('opstalent.api_bundle.serializer_service')->generateSerializationGroup($route, "get", $entity)]
-                ),
-                200,
-                ['Content-Type' => 'application/json']
-            );
-        } else throw new \Exception("Not Found", 404);
+        return $entity;
+    }
+
+    protected function addPaginatorFilters(Form $form)
+    {
+        $form
+            ->add('offset', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('limit', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('orderBy', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('order', TextType::class, ['required'=> false, 'mapped'=> true])
+            ->add('count', TextType::class, ['required'=> false, 'mapped'=> true])
+        ;
     }
 }
