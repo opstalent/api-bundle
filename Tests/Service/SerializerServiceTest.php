@@ -181,7 +181,7 @@ class SerializerServiceTest extends TestCase
 
         foreach ($this->isOwnerProvider() as $row) {
             $method = $methods[mt_rand(0, 2)];
-            $expected = $row[3] ? $row[2]->getOption('serializerGroups')['owner'] : [];
+            $expected = $row[3] ? [$row[2]->getOption('serializerGroups')['owner']] : [];
             $data[] = [$row[2], $method, $row[1], ['id' => $row[0]], $expected];
 
         }
@@ -312,7 +312,7 @@ class SerializerServiceTest extends TestCase
                 ],
                 'route' => [
                     'serializerGroups' => [
-                        'owner' => ['me'],
+                        'owner' => 'me',
                     ],
                 ],
                 'expected' => true,
@@ -322,7 +322,7 @@ class SerializerServiceTest extends TestCase
                 'data' => null,
                 'route' => [
                     'serializerGroups' => [
-                        'owner' => ['me'],
+                        'owner' => 'me',
                     ],
                 ],
                 'expected' => false,
@@ -334,7 +334,7 @@ class SerializerServiceTest extends TestCase
                 ],
                 'route' => [
                     'serializerGroups' => [
-                        'owner' => ['me'],
+                        'owner' => 'me',
                     ],
                 ],
                 'expected' => false,

@@ -37,7 +37,7 @@ class SerializerService extends Serializer
         $groups = [];
         $user = $this->tokenStorage->getToken()->getUser();
         if ($this->isOwner($user, $data, $route)) {
-            $groups += $serializeGroup['owner'];
+            $groups[] = $serializeGroup['owner'];
         }
 
         $groups += $this->getAclMatchingRoles($route);
