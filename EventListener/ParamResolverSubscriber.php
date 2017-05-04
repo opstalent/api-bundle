@@ -131,7 +131,7 @@ class ParamResolverSubscriber implements EventSubscriberInterface
         }
 
         foreach ($reflection->getParameters() as $param) {
-            if ($param->name == $annotation->methodParam && !$param->hasType()) {
+            if ($param->name == $annotation->methodParam) {
                 return true;
             }
         }
