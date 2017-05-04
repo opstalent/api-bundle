@@ -59,7 +59,7 @@ class ParamResolverSubscriber implements EventSubscriberInterface
         }
 
         if (!$this->verifyMethodParams($annotation, $event->getController())) {
-            throw new \LogicException(string(
+            throw new \LogicException(sprintf(
                 'Controller param "%s" do not exist',
                 $annotation->methodParam
             ));
@@ -131,7 +131,7 @@ class ParamResolverSubscriber implements EventSubscriberInterface
         }
 
         foreach ($reflection->getParameters() as $param) {
-            if ($param->name == $annotation->methodParam && !$param->hasType()) {
+            if ($param->name == $annotation->methodParam) {
                 return true;
             }
         }
