@@ -138,6 +138,9 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
         return $this->getEntityManager()->getReference($this->repositoryName, $id);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function remove($data, bool $flush = true)
     {
         $this->dispatchEvent(RepositoryEvents::BEFORE_REMOVE, $this , $data);
@@ -147,11 +150,17 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
         return $data;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function flush()
     {
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function persist($data, bool $flush=false)
     {
         $this->dispatchEvent(RepositoryEvents::BEFORE_PERSIST, $this, $data);
