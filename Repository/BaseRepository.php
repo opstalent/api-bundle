@@ -11,10 +11,11 @@ use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
+use Opstalent\ApiBundle\Event\RepositoryEvent;
+use Opstalent\ApiBundle\Event\RepositoryEvents;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Opstalent\SecurityBundle\Event\RepositoryEvent;
 
 class BaseRepository extends EntityRepository implements RepositoryInterface
 {
@@ -101,9 +102,9 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function searchByFilters(array $data):array
+    public function searchByFilters(array $data) : array
     {
-        $this->dispatchEvent('before.search.by.filter', $this);
+        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this);
         if(array_key_exists('limit', $data)) {
             $this->setLimit($data['limit']);
             unset($data['limit']);
@@ -130,7 +131,7 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
             }
         }
 
-        $this->dispatchEvent('after.search.by.filter', $this);
+        $this->dispatchEvent(RepositoryEvents::AFTER_SEARCH_BY_FILTER, $this);
 
         $query = $qb->getQuery();
         if(array_key_exists('count', $data)) {
@@ -152,10 +153,10 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
 
     public function remove($data, bool $flush = true)
     {
-        $this->dispatchEvent('before.remove', $this , $data);
+        $this->dispatchEvent(RepositoryEvents::BEFORE_REMOVE, $this , $data);
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
-        $this->dispatchEvent('after.remove', $this, $data);
+        $this->dispatchEvent(RepositoryEvents::AFTER_REMOVE, $this, $data);
         return $data;
     }
 
@@ -166,10 +167,10 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
 
     public function persist($data, bool $flush=false)
     {
-        $this->dispatchEvent('before.persist', $this, $data);
+        $this->dispatchEvent(RepositoryEvents::BEFORE_PERSIST, $this, $data);
         $this->getEntityManager()->persist($data);
         if($flush) $this->flush();
-        $this->dispatchEvent('after.persist',$this, $data);
+        $this->dispatchEvent(RepositoryEvents::AFTER_PERSIST,$this, $data);
         return $data;
     }
 
@@ -195,9 +196,9 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
         }
     }
 
-    private function dispatchEvent($name,$obj,$data=null,$params=[])
+    private function dispatchEvent($name, $obj, $data = null)
     {
-        if($this->dispatcher) {
+        if ($this->dispatcher) {
             $this->dispatcher->dispatch($name, new RepositoryEvent($name, $obj, $data));
         }
     }
