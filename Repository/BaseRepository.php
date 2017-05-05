@@ -17,7 +17,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class BaseRepository extends EntityRepository implements RepositoryInterface
+class BaseRepository extends EntityRepository implements
+    PersistableRepositoryInterface,
+    SearchableRepositoryInterface
 {
     protected $filters = [];
     protected $repositoryName='';
