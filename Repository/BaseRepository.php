@@ -104,20 +104,7 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
      */
     public function searchByFilters(array $data) : array
     {
-        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this);
-        if(array_key_exists('limit', $data)) {
-            $this->setLimit($data['limit']);
-            unset($data['limit']);
-        }
-        if(array_key_exists('offset', $data)) {
-            $this->setOffset($data['offset']);
-            unset($data['offset']);
-        }
-        if(array_key_exists('order', $data) && array_key_exists('orderBy', $data)) {
-            $this->setOrder($data['order'], $data['orderBy']);
-            unset($data['order']);
-            unset($data['orderBy']);
-        }
+        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this, $data);
 
         $qb = $this->getQueryBuilder();
         foreach ($data as $filter => $value)

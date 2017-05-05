@@ -40,6 +40,12 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+  opstalent.api_repository.event_subscriber.repository_query:
+    class: Opstalent\ApiBundle\EventListener\RepositoryEventSubscriber
+    tags:
+      - { name: kernel.event_subscriber }
+
+
   opstalent.api_bundle.normalizer.datetime:
     class: Opstalent\ApiBundle\Service\DateTimeNormalizerService
   opstalent.api_bundle.serializer_service:
