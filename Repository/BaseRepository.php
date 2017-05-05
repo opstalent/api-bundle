@@ -16,7 +16,7 @@ use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Opstalent\SecurityBundle\Event\RepositoryEvent;
 
-class BaseRepository extends EntityRepository
+class BaseRepository extends EntityRepository implements RepositoryInterface
 {
     protected $filters = [];
     protected $repositoryName='';
@@ -71,39 +71,54 @@ class BaseRepository extends EntityRepository
         return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
     }
 
-    public function setLimit(int $limit, QueryBuilder $qb):QueryBuilder
+    /**
+     * {@inheritdoc}
+     */
+    public function setLimit(int $limit)
     {
-        return $qb->setMaxResults($limit);
+        $qb = $this->getQueryBuilder();
+        $qb->setMaxResults($limit);
     }
 
-    public function setOffset(int $offset, QueryBuilder $qb):QueryBuilder
+    /**
+     * {@inheritdoc}
+     */
+    public function setOffset(int $offset)
     {
-        return $qb->setFirstResult($offset);
+        $qb = $this->getQueryBuilder();
+        $qb->setFirstResult($offset);
     }
 
-    public function setOrder(string $order='ASC', string $orderBy, QueryBuilder $qb):QueryBuilder
+    /**
+     * {@inheritdoc}
+     */
+    public function setOrder(string $order, string $orderBy)
     {
-        return $qb->orderBy($this->repositoryAlias . "." . $orderBy,$order);
+        $qb = $this->getQueryBuilder();
+        $qb->orderBy($this->repositoryAlias . '.' . $orderBy, $order);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function searchByFilters(array $data):array
     {
         $this->dispatchEvent('before.search.by.filter', $this);
-        $qb = $this->getQueryBuilder();
-        if(array_key_exists('limit',$data)) {
-            $this->setLimit($data['limit'],$qb);
+        if(array_key_exists('limit', $data)) {
+            $this->setLimit($data['limit']);
             unset($data['limit']);
         }
-        if(array_key_exists('offset',$data)) {
-            $this->setOffset($data['offset'],$qb);
+        if(array_key_exists('offset', $data)) {
+            $this->setOffset($data['offset']);
             unset($data['offset']);
         }
-        if(array_key_exists('order',$data) && array_key_exists('orderBy',$data)) {
-            $this->setOrder($data['order'],$data['orderBy'], $qb);
+        if(array_key_exists('order', $data) && array_key_exists('orderBy', $data)) {
+            $this->setOrder($data['order'], $data['orderBy']);
             unset($data['order']);
             unset($data['orderBy']);
         }
 
+        $qb = $this->getQueryBuilder();
         foreach ($data as $filter => $value)
         {
             if($filter === 'count') continue;
