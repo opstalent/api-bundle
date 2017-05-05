@@ -2,7 +2,7 @@
 
 namespace Opstalent\ApiBundle\Event;
 
-use Opstalent\ApiBundle\Repository\BaseRepository;
+use Opstalent\ApiBundle\Repository\RepositoryInterface;
 use Symfony\Component\EventDispatcher\Event;
 
 class RepositoryEvent extends Event
@@ -15,7 +15,12 @@ class RepositoryEvent extends Event
      */
     protected $name;
 
-    public function __construct(string $name, BaseRepository $repository, $data = null)
+    /**
+     * @param string $name
+     * @param RepositoryInterface $repository
+     * @param mixed $data
+     */
+    public function __construct(string $name, RepositoryInterface $repository, $data = null)
     {
         $this->name = $name;
         $this->repository = $repository;

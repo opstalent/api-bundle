@@ -8,7 +8,7 @@ use Doctrine\Common\Persistence\ObjectRepository;
  * @author Patryk Grudniewski <patgrudniewski@gmail.com>
  * @package Opstalent\ApiBundle
  */
-interface PersistableRepositoryInterface extends ObjectRepository
+interface PersistableRepositoryInterface extends ObjectRepository, RepositoryInterface
 {
     /**
      * @param mixed $data
