@@ -12,4 +12,9 @@ interface SearchableRepositoryInterface extends RepositoryInterface
      * @return array
      */
     public function searchByFilters(array $data) : array;
+
+    /**
+     * @return array
+     */
+    public function getFilters() : array;
 }

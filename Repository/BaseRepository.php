@@ -52,28 +52,12 @@ class BaseRepository extends EntityRepository implements
         $this->dispatcher = $dispatcher;
     }
 
-    public function getPropertyType(string $property)
-    {
-        if (!$this->reflect->hasProperty($property)) {
-            dump('the entity does not have property: '. $property);
-            return null;
-        }
-        $docInfo = $this->docReader->getPropertyAnnotations($this->reflect->getProperty($property));
-        return $this->parseDocInfo($docInfo);
-    }
-
-    public function parseDocInfo(array $docInfo): string
-    {
-        if($docInfo[count($docInfo)-2] instanceof Column) return $docInfo[count($docInfo)-2]->type;
-        return (array_key_exists("targetEntity", $docInfo[0])) ? 'integer' : 'string';
-    }
-
     /**
      * {@inheritdoc}
      */
     public function searchByFilters(array $data) : array
     {
-        $qb = new QueryBuilder($this->createQueryBuilder($this->repositoryAlias));
+        $qb = new QueryBuilder($this->createQueryBuilder($this->repositoryAlias), $this->repositoryAlias);
 
         $this->dispatchEvent(new RepositorySearchEvent(
             RepositoryEvents::BEFORE_SEARCH_BY_FILTER,
@@ -81,16 +65,6 @@ class BaseRepository extends EntityRepository implements
             $data,
             $qb
         ));
-
-        foreach ($data as $filter => $value)
-        {
-            if($filter === 'count') continue;
-            if(array_key_exists($filter,$this->filters)) {
-                continue;
-            } elseif($propertyType = $this->getPropertyType($filter)) {
-                $this->addPropertyFilter($value, $qb->inner(), $filter, $propertyType);
-            }
-        }
 
         $this->dispatchEvent(new RepositorySearchEvent(
             RepositoryEvents::AFTER_SEARCH_BY_FILTER,
@@ -156,11 +130,19 @@ class BaseRepository extends EntityRepository implements
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
-    public function getFilters()
+    public function getFilters() : array
     {
         return $this->filters;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getEntityName() : string
+    {
+        return $this->entityName;
     }
 
     private function addPropertyFilter($value, DoctrineQueryBuilder $qb, string $property, string $propertyType) : DoctrineQueryBuilder
