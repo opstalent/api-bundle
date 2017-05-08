@@ -86,8 +86,7 @@ class BaseRepository extends EntityRepository implements
         {
             if($filter === 'count') continue;
             if(array_key_exists($filter,$this->filters)) {
-                $func = $this->filters[$filter];
-                $this->$func($value, $qb->inner());
+                continue;
             } elseif($propertyType = $this->getPropertyType($filter)) {
                 $this->addPropertyFilter($value, $qb->inner(), $filter, $propertyType);
             }
@@ -154,6 +153,14 @@ class BaseRepository extends EntityRepository implements
         $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::AFTER_PERSIST,$this, $data));
 
         return $data;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFilters()
+    {
+        return $this->filters;
     }
 
     private function addPropertyFilter($value, DoctrineQueryBuilder $qb, string $property, string $propertyType) : DoctrineQueryBuilder

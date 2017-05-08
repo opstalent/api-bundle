@@ -22,6 +22,7 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
                 ['prepareLimit', 200],
                 ['prepareOffset', 200],
                 ['prepareOrder', 200],
+                ['buildFilters', 150],
             ],
         ];
     }
@@ -70,5 +71,28 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
 
             $event->setData($data);
         }
+    }
+
+    /**
+     * @param RepositoryEvent $event
+     */
+    public function buildFilters(RepositorySearchEvent $event)
+    {
+        $repository = $event->getRepository();
+        $filters = $repository->getFilters();
+        $data = $event->getData();
+
+        foreach ($data as $filter => $value) {
+            if (!array_key_exists($filter, $filters)) {
+                continue;
+            }
+
+            $callback = [$repository, $filters[$filter]];
+            call_user_func($callback, $value, $event->getQueryBuilder());
+
+            unset($data[$filter]);
+        }
+
+        $event->setData($data);
     }
 }
