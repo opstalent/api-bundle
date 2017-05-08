@@ -27,7 +27,10 @@ class BaseRepository extends EntityRepository implements
     protected $docReader;
     protected $reflect;
     protected $entityName='';
-    /** @var  TraceableEventDispatcher */
+
+    /**
+     * @var EventDispatcherInterface
+     */
     protected $dispatcher;
     protected $qb;
 
@@ -106,7 +109,7 @@ class BaseRepository extends EntityRepository implements
      */
     public function searchByFilters(array $data) : array
     {
-        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this, $data);
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this, $data));
 
         $qb = $this->getQueryBuilder();
         foreach ($data as $filter => $value)
@@ -120,7 +123,7 @@ class BaseRepository extends EntityRepository implements
             }
         }
 
-        $this->dispatchEvent(RepositoryEvents::AFTER_SEARCH_BY_FILTER, $this);
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::AFTER_SEARCH_BY_FILTER, $this));
 
         $query = $qb->getQuery();
         if(array_key_exists('count', $data)) {
@@ -145,10 +148,13 @@ class BaseRepository extends EntityRepository implements
      */
     public function remove($data, bool $flush = true)
     {
-        $this->dispatchEvent(RepositoryEvents::BEFORE_REMOVE, $this , $data);
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::BEFORE_REMOVE, $this , $data));
+
         $this->getEntityManager()->remove($data);
         if($flush) $this->flush();
-        $this->dispatchEvent(RepositoryEvents::AFTER_REMOVE, $this, $data);
+
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::AFTER_REMOVE, $this, $data));
+
         return $data;
     }
 
@@ -165,10 +171,13 @@ class BaseRepository extends EntityRepository implements
      */
     public function persist($data, bool $flush=false)
     {
-        $this->dispatchEvent(RepositoryEvents::BEFORE_PERSIST, $this, $data);
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::BEFORE_PERSIST, $this, $data));
+
         $this->getEntityManager()->persist($data);
         if($flush) $this->flush();
-        $this->dispatchEvent(RepositoryEvents::AFTER_PERSIST,$this, $data);
+
+        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::AFTER_PERSIST,$this, $data));
+
         return $data;
     }
 
@@ -194,10 +203,13 @@ class BaseRepository extends EntityRepository implements
         }
     }
 
-    private function dispatchEvent($name, $obj, $data = null)
+    /**
+     * @param RepositoryEvent $event
+     */
+    private function dispatchEvent(RepositoryEvent $event)
     {
         if ($this->dispatcher) {
-            $this->dispatcher->dispatch($name, new RepositoryEvent($name, $obj, $data));
+            $this->dispatcher->dispatch($event->getName(), $event);// new RepositoryEvent($name, $obj, $data));
         }
     }
 }
