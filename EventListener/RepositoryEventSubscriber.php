@@ -2,8 +2,8 @@
 
 namespace Opstalent\ApiBundle\EventListener;
 
-use Opstalent\ApiBundle\Event\RepositoryEvent;
 use Opstalent\ApiBundle\Event\RepositoryEvents;
+use Opstalent\ApiBundle\Event\RepositorySearchEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -29,11 +29,11 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     /**
      * @param RepositoryEvent $event
      */
-    public function prepareLimit(RepositoryEvent $event)
+    public function prepareLimit(RepositorySearchEvent $event)
     {
         $data = $event->getData();
         if (array_key_exists('limit', $data)) {
-            $event->getRepository()->setLimit($data['limit']);
+            $event->getQueryBuilder()->setLimit($data['limit']);
 
             unset($data['limit']);
 
@@ -44,11 +44,11 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     /**
      * @param RepositoryEvent $event
      */
-    public function prepareOffset(RepositoryEvent $event)
+    public function prepareOffset(RepositorySearchEvent $event)
     {
         $data = $event->getData();
         if (array_key_exists('offset', $data)) {
-            $event->getRepository()->setOffset($data['offset']);
+            $event->getQueryBuilder()->setOffset($data['offset']);
 
             unset($data['offset']);
 
@@ -59,11 +59,11 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     /**
      * @param RepositoryEvent $event
      */
-    public function prepareOrder(RepositoryEvent $event)
+    public function prepareOrder(RepositorySearchEvent $event)
     {
         $data = $event->getData();
         if (array_key_exists('order', $data) && array_key_exists('orderBy', $data)) {
-            $event->getRepository()->setOrder($data['order'], $data['orderBy']);
+            $event->getQueryBuilder()->setOrder($data['order'], $data['orderBy']);
 
             unset($data['order']);
             unset($data['orderBy']);
