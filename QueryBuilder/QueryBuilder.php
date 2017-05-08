@@ -12,6 +12,11 @@ use Doctrine\ORM\QueryBuilder as OrmQueryBuilder;
 class QueryBuilder implements QueryBuilderInterface
 {
     /**
+     * @var OrmQueryBuilder
+     */
+    protected $queryBuilder;
+
+    /**
      * @param OrmQueryBuilder $qb
      */
     public function __construct(OrmQueryBuilder $qb)
