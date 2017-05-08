@@ -8,11 +8,13 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
 use Opstalent\ApiBundle\Event\RepositoryEvent;
 use Opstalent\ApiBundle\Event\RepositoryEvents;
+use Opstalent\ApiBundle\Event\RepositorySearchEvent;
+use Opstalent\ApiBundle\QueryBuilder\QueryBuilder;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -50,17 +52,6 @@ class BaseRepository extends EntityRepository implements
         $this->dispatcher = $dispatcher;
     }
 
-    public function getQueryBuilder():QueryBuilder
-    {
-        return ($this->qb) ? $this->qb : $this->createQueryBuilderInstance();
-    }
-
-    public function createQueryBuilderInstance()
-    {
-        $this->qb = $this->getEntityManager()->getRepository($this->repositoryName)->createQueryBuilder($this->repositoryAlias);
-        return $this->qb;
-    }
-
     public function getPropertyType(string $property)
     {
         if (!$this->reflect->hasProperty($property)) {
@@ -80,50 +71,34 @@ class BaseRepository extends EntityRepository implements
     /**
      * {@inheritdoc}
      */
-    public function setLimit(int $limit)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->setMaxResults($limit);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setOffset(int $offset)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->setFirstResult($offset);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setOrder(string $order, string $orderBy)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->orderBy($this->repositoryAlias . '.' . $orderBy, $order);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function searchByFilters(array $data) : array
     {
-        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this, $data));
+        $qb = new QueryBuilder($this->createQueryBuilder($this->repositoryAlias));
 
-        $qb = $this->getQueryBuilder();
+        $this->dispatchEvent(new RepositorySearchEvent(
+            RepositoryEvents::BEFORE_SEARCH_BY_FILTER,
+            $this,
+            $data,
+            $qb
+        ));
+
         foreach ($data as $filter => $value)
         {
             if($filter === 'count') continue;
             if(array_key_exists($filter,$this->filters)) {
                 $func = $this->filters[$filter];
-                $this->$func($value,$qb);
+                $this->$func($value, $qb->inner());
             } elseif($propertyType = $this->getPropertyType($filter)) {
-                $this->addPropertyFilter($value,$qb,$filter,$propertyType);
+                $this->addPropertyFilter($value, $qb->inner(), $filter, $propertyType);
             }
         }
 
-        $this->dispatchEvent(new RepositoryEvent(RepositoryEvents::AFTER_SEARCH_BY_FILTER, $this));
+        $this->dispatchEvent(new RepositorySearchEvent(
+            RepositoryEvents::AFTER_SEARCH_BY_FILTER,
+            $this,
+            null,
+            $qb
+        ));
 
         $query = $qb->getQuery();
         if(array_key_exists('count', $data)) {
@@ -181,7 +156,7 @@ class BaseRepository extends EntityRepository implements
         return $data;
     }
 
-    private function addPropertyFilter($value, QueryBuilder $qb, string $property, string $propertyType):QueryBuilder
+    private function addPropertyFilter($value, DoctrineQueryBuilder $qb, string $property, string $propertyType) : DoctrineQueryBuilder
     {
         switch ($propertyType)
         {
