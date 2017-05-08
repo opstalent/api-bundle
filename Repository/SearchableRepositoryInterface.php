@@ -5,7 +5,7 @@ namespace Opstalent\ApiBundle\Repository;
 /**
  * @author Patryk Grudniewski <patgrudniewski@gmail.com>
  */
-interface RepositoryInterface
+interface SearchableRepositoryInterface
 {
     /**
      * @param int $limit

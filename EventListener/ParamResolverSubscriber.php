@@ -3,7 +3,7 @@
 namespace Opstalent\ApiBundle\EventListener;
 
 use Opstalent\ApiBundle\Annotation\ParamResolver;
-use Opstalent\ApiBundle\Repository\BaseRepository;
+use Opstalent\ApiBundle\Repository\PersistableRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -78,17 +78,17 @@ class ParamResolverSubscriber implements EventSubscriberInterface
 
     /**
      * @param Request $request
-     * @return BaseRepository
+     * @return PersistableRepositoryInterface
      * @throws \LogicException
      */
-    private function extractRepository(Request $request) : BaseRepository
+    private function extractRepository(Request $request) : PersistableRepositoryInterface
     {
         $route = $this->router->getRouteCollection()->get($request->attributes->get('_route'));
         $repository = $this->container->get(substr($route->getOption('repository'), 1));
-        if (!$repository instanceof BaseRepository) {
+        if (!$repository instanceof PersistableRepositoryInterface) {
             throw new \LogicException(sprintf(
-                'Repository caller expects that repository would be instance of %s, %s given',
-                BaseRepository::class,
+                'Param resolver expects that repository would be instance of %s, %s given',
+                PersistableRepositoryInterface::class,
                 is_object($repository) ? get_class($repository) : gettype($repository)
             ));
         }

@@ -17,7 +17,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class BaseRepository extends EntityRepository implements RepositoryInterface
+class BaseRepository extends EntityRepository implements
+    PersistableRepositoryInterface,
+    SearchableRepositoryInterface
 {
     protected $filters = [];
     protected $repositoryName='';
@@ -104,20 +106,7 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
      */
     public function searchByFilters(array $data) : array
     {
-        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this);
-        if(array_key_exists('limit', $data)) {
-            $this->setLimit($data['limit']);
-            unset($data['limit']);
-        }
-        if(array_key_exists('offset', $data)) {
-            $this->setOffset($data['offset']);
-            unset($data['offset']);
-        }
-        if(array_key_exists('order', $data) && array_key_exists('orderBy', $data)) {
-            $this->setOrder($data['order'], $data['orderBy']);
-            unset($data['order']);
-            unset($data['orderBy']);
-        }
+        $this->dispatchEvent(RepositoryEvents::BEFORE_SEARCH_BY_FILTER, $this, $data);
 
         $qb = $this->getQueryBuilder();
         foreach ($data as $filter => $value)
@@ -151,6 +140,9 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
         return $this->getEntityManager()->getReference($this->repositoryName, $id);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function remove($data, bool $flush = true)
     {
         $this->dispatchEvent(RepositoryEvents::BEFORE_REMOVE, $this , $data);
@@ -160,11 +152,17 @@ class BaseRepository extends EntityRepository implements RepositoryInterface
         return $data;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function flush()
     {
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function persist($data, bool $flush=false)
     {
         $this->dispatchEvent(RepositoryEvents::BEFORE_PERSIST, $this, $data);

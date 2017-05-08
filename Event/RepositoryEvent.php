@@ -39,4 +39,12 @@ class RepositoryEvent extends Event
     {
         return $this->data;
     }
+
+    /**
+     * @param mixed $data
+     */
+    public function setData($data)
+    {
+        $this->data = $data;
+    }
 }
