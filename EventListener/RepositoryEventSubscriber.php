@@ -4,6 +4,8 @@ namespace Opstalent\ApiBundle\EventListener;
 
 use Opstalent\ApiBundle\Event\RepositoryEvents;
 use Opstalent\ApiBundle\Event\RepositorySearchEvent;
+use Opstalent\ApiBundle\Exception\ColumnNotDefinedException;
+use Opstalent\ApiBundle\Resolver\ColumnTypeResolver;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -12,6 +14,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class RepositoryEventSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var ColumnTypeResolver
+     */
+    protected $columnTypeResolver;
+
     /**
      * {@inheritdoc}
      */
@@ -23,12 +30,21 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
                 ['prepareOffset', 200],
                 ['prepareOrder', 200],
                 ['buildFilters', 150],
+                ['buildPropertyFilters', 145],
             ],
         ];
     }
 
     /**
-     * @param RepositoryEvent $event
+     * @param ColumnTypeResolver
+     */
+    public function __construct(ColumnTypeResolver $columnResolver)
+    {
+        $this->columnTypeResolver = $columnResolver;
+    }
+
+    /**
+     * @param RepositorySearchEvent $event
      */
     public function prepareLimit(RepositorySearchEvent $event)
     {
@@ -43,7 +59,7 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param RepositoryEvent $event
+     * @param RepositorySearchEvent $event
      */
     public function prepareOffset(RepositorySearchEvent $event)
     {
@@ -58,7 +74,7 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param RepositoryEvent $event
+     * @param RepositorySearchEvent $event
      */
     public function prepareOrder(RepositorySearchEvent $event)
     {
@@ -74,7 +90,7 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param RepositoryEvent $event
+     * @param RepositorySearchEvent $event
      */
     public function buildFilters(RepositorySearchEvent $event)
     {
@@ -91,6 +107,28 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
             call_user_func($callback, $value, $event->getQueryBuilder());
 
             unset($data[$filter]);
+        }
+
+        $event->setData($data);
+    }
+
+    /**
+     * @param RepositorySearchEvent $event
+     */
+    public function buildPropertyFilters(RepositorySearchEvent $event)
+    {
+        $data = $event->getData();
+        $repository = $event->getRepository();
+
+        foreach ($data as $filter => $value) {
+            try {
+                $propertyType = $this->columnTypeResolver->resolve($repository->getEntityName(), $filter);
+                $event->getQueryBuilder()->filter($filter, $propertyType, $value);
+
+                unset($data[$filter]);
+            } catch (ColumnNotDefinedException $exception) {
+                continue;
+            }
         }
 
         $event->setData($data);

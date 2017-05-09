@@ -47,9 +47,15 @@ services:
 
   opstalent.api_repository.event_subscriber.repository_query:
     class: Opstalent\ApiBundle\EventListener\RepositoryEventSubscriber
+    arguments:
+      - "@opstalent.api_bundle.resolver.column_type"
     tags:
       - { name: kernel.event_subscriber }
 
+  opstalent.api_bundle.resolver.column_type:
+    class: Opstalent\ApiBundle\Resolver\ColumnTypeResolver
+    arguments:
+      - "@doctrine.orm.entity_manager"
 
   opstalent.api_bundle.normalizer.datetime:
     class: Opstalent\ApiBundle\Service\DateTimeNormalizerService

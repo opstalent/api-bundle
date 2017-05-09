@@ -17,11 +17,18 @@ class QueryBuilder implements QueryBuilderInterface
     protected $queryBuilder;
 
     /**
-     * @param OrmQueryBuilder $qb
+     * @var string
      */
-    public function __construct(OrmQueryBuilder $qb)
+    protected $mainTableAlias;
+
+    /**
+     * @param OrmQueryBuilder $qb
+     * @param string $alias
+     */
+    public function __construct(OrmQueryBuilder $qb, string $alias)
     {
         $this->queryBuilder = $qb;
+        $this->mainTableAlias = $alias;
     }
 
     /**
@@ -45,7 +52,30 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function setOrder(string $order, string $orderBy)
     {
-        $this->inner()->orderBy($orderBy, $order);
+        $this->inner()->orderBy($this->mainTableAlias . '.' . $orderBy, $order);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function filter(string $field, string $type, $value)
+    {
+        $field = $this->mainTableAlias . '.' . $field;
+
+        switch($type) {
+            case 'string':
+                $this->stringFilter($field, $value);
+                break;
+            case 'datetime':
+                $this->datetimeFilter($field, $value);
+                break;
+            default:
+                $this->inner()
+                    ->andWhere($field, ':' . $field)
+                    ->setParameter($field, $value)
+                    ;
+                break;
+        }
     }
 
     /**
@@ -62,5 +92,35 @@ class QueryBuilder implements QueryBuilderInterface
     public function inner() : OrmQueryBuilder
     {
         return $this->queryBuilder;
+    }
+
+    /**
+     * @param string $field
+     * @param string $value
+     */
+    protected function stringFilter(string $field, string $value)
+    {
+        $value = $this->inner()->expr()->literal('%' . $value . '%');
+        $expression = $this->inner()->expr()->like($field, $value);
+
+        $this->inner()->andWhere($expression);
+    }
+
+    /**
+     * @param string $field
+     * @param \DateTime $value
+     */
+    protected function datetimeFilter(string $field, \DateTime $value)
+    {
+        $lowerLimit = $this->inner()->expr()->gte($property, $value);
+
+        $upperValue = clone $value;
+        $upperValue->setTime($upperValue->format('H'), $upperValue->format('i'), 59);
+        $upperLimit = $this->inner()->expr()->lt($property, $value);
+
+        $this->inner()
+            ->andWhere($lowerLimit)
+            ->andWhere($upperLimit)
+            ;
     }
 }
