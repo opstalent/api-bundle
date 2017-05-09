@@ -2,14 +2,10 @@
 
 namespace Opstalent\ApiBundle\EventListener;
 
-use Opstalent\ApiBundle\Annotation\Serializable;
-use Opstalent\ApiBundle\Service\SerializerService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * @author Szymon Kunowski <szymon.kunowski@gmail.com>
@@ -35,7 +31,7 @@ class CORSSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
         $method  = $request->getRealMethod();
         if ('OPTIONS' == $method) {
-            $response = new JsonResponse();
+            $response = new Response();
             $response->setStatusCode(200);
             $event->setResponse($response);
         }
