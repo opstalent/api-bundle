@@ -8,4 +8,8 @@ namespace Opstalent\ApiBundle\Repository;
  */
 interface RepositoryInterface
 {
+    /**
+     * @return string
+     */
+    public function getEntityName() : string;
 }

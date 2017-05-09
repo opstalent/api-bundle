@@ -23,4 +23,11 @@ interface QueryBuilderInterface
      * @param string $orderBy
      */
     public function setOrder(string $order, string $orderBy);
+
+    /**
+     * @param string $field
+     * @param string $type
+     * @param mixed $value
+     */
+    public function filter(string $field, string $type, $value);
 }
