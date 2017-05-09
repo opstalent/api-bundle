@@ -2,22 +2,12 @@
 
 namespace Opstalent\ApiBundle\Repository;
 
-use AppBundle\AppBundle;
-use AppBundle\Entity\User;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Tools\Pagination\Paginator;
-use ReflectionClass;
 use Opstalent\ApiBundle\Event\RepositoryEvent;
 use Opstalent\ApiBundle\Event\RepositoryEvents;
 use Opstalent\ApiBundle\Event\RepositorySearchEvent;
 use Opstalent\ApiBundle\QueryBuilder\QueryBuilder;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class BaseRepository extends EntityRepository implements
@@ -27,26 +17,13 @@ class BaseRepository extends EntityRepository implements
     protected $filters = [];
     protected $repositoryName='';
     protected $repositoryAlias='';
-    protected $docReader;
-    protected $reflect;
     protected $entityName='';
 
     /**
      * @var EventDispatcherInterface
      */
     protected $dispatcher;
-    protected $qb;
 
-    /**
-     * BaseRepository constructor.
-     */
-    public function __construct(EntityManager $em, ClassMetadata $class)
-    {
-        parent::__construct($em,$class);
-        $this->docReader = new AnnotationReader();
-        $entity = new $this->entityName();
-        $this->reflect = new ReflectionClass($entity);
-    }
 
     public function setEventDispatcher(EventDispatcherInterface $dispatcher)
     {
@@ -144,28 +121,6 @@ class BaseRepository extends EntityRepository implements
     public function getEntityName() : string
     {
         return $this->entityName;
-    }
-
-    private function addPropertyFilter($value, DoctrineQueryBuilder $qb, string $property, string $propertyType) : DoctrineQueryBuilder
-    {
-        switch ($propertyType)
-        {
-            case 'string':
-                $ex = $qb->expr()->like($this->repositoryAlias . '.' . $property, $qb->expr()->literal('%' . $value . '%'));
-                return $qb->andWhere($ex);
-                break;
-            case 'datetime':
-                /** @var \DateTime $value */
-                $exgte = $qb->expr()->gte($this->repositoryAlias . '.' . $property, $value);
-                $to = clone $value;
-                $to->setTime($to->format("H"), $to->format("i"),59);
-                $qb->andWhere($this->repositoryAlias . '.' . $property . ' >= :' . $property)->setParameter($property, $value);
-                return $qb->andWhere($this->repositoryAlias . '.' . $property . ' <= :to' . $property)->setParameter('to'.$property, $to);;
-                break;
-            default:
-                return $qb->andWhere($this->repositoryAlias . '.' . $property . ' = :' . $property)->setParameter($property, $value);
-                break;
-        }
     }
 
     /**
