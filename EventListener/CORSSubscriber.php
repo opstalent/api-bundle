@@ -20,7 +20,7 @@ class CORSSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 9999],
+            KernelEvents::REQUEST => ['onKernelRequest', 251],
         ];
     }
 
@@ -30,6 +30,9 @@ class CORSSubscriber implements EventSubscriberInterface
         }
         $request = $event->getRequest();
         $method  = $request->getRealMethod();
+        header("Access-Control-Allow-Origin: " . $event->getRequest()->server->get('HTTP_ORIGIN'), $event->getRequest()->getHost());
+        header("Access-Control-Allow-Credentials: true");
+        header("Access-Control-Allow-Headers: Authorization, X-Requested-With, Content-Type, Accept, Origin, X-Custom-Auth, Cache-Control");
         if ('OPTIONS' == $method) {
             $response = new Response();
             $response->setStatusCode(200);
