@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\QueryBuilder as DoctrineQueryBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use ReflectionClass;
 use Opstalent\ApiBundle\Event\RepositoryEvent;
 use Opstalent\ApiBundle\Event\RepositoryEvents;
@@ -66,24 +67,24 @@ class BaseRepository extends EntityRepository implements
             $qb
         ));
 
-        $this->dispatchEvent(new RepositorySearchEvent(
+        $result = [];
+        $query = $qb->getQuery();
+        if (array_key_exists('count', $data)) {
+            unset($data['count']);
+
+            $paginator = new Paginator($query);
+            $result['total'] = count($paginator);
+        }
+
+        $result['list'] = $query->getResult();
+
+        $this->dispatchEvent(new RepositoryEvent(
             RepositoryEvents::AFTER_SEARCH_BY_FILTER,
             $this,
-            null,
-            $qb
+            null
         ));
 
-        $query = $qb->getQuery();
-        if(array_key_exists('count', $data)) {
-            $paginator  = new \Doctrine\ORM\Tools\Pagination\Paginator($query);
-            return [
-                'list' => $query->getResult(),
-                'total' => count($paginator)
-            ];
-        }
-        return [
-            'list' => $query->getResult()
-        ];
+        return $result;
     }
 
     public function getReference(int $id)
