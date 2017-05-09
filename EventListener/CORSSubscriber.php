@@ -4,6 +4,7 @@ namespace Opstalent\ApiBundle\EventListener;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 
@@ -21,6 +22,7 @@ class CORSSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 99999],
+            KernelEvents::RESPONSE => ['onKernelResponse', 99999]
         ];
     }
 
@@ -30,13 +32,19 @@ class CORSSubscriber implements EventSubscriberInterface
         }
         $request = $event->getRequest();
         $method  = $request->getRealMethod();
-        header("Access-Control-Allow-Origin: " . $event->getRequest()->server->get('HTTP_ORIGIN'), $event->getRequest()->getHost());
-        header("Access-Control-Allow-Credentials: true");
-        header("Access-Control-Allow-Headers: Authorization, X-Requested-With, Content-Type, Accept, Origin, X-Custom-Auth, Cache-Control");
         if ('OPTIONS' == $method) {
             $response = new Response();
             $response->setStatusCode(200);
             $event->setResponse($response);
         }
+    }
+
+    public function onKernelResponse(FilterResponseEvent $event)
+    {
+        $event->getResponse()->headers->add([
+            "Access-Control-Allow-Origin" => $event->getRequest()->server->get('HTTP_ORIGIN'), $event->getRequest()->getHost(),
+            "Access-Control-Allow-Credentials" => "true",
+            "Access-Control-Allow-Headers" => "Authorization, X-Requested-With, Content-Type, Accept, Origin, X-Custom-Auth, Cache-Control"
+        ]);
     }
 }
