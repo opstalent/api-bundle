@@ -30,4 +30,7 @@ interface QueryBuilderInterface
      * @param mixed $value
      */
     public function filter(string $field, string $type, $value);
+
+
+    public function inner();
 }
