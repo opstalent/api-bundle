@@ -31,6 +31,8 @@ interface QueryBuilderInterface
      */
     public function filter(string $field, string $type, $value);
 
-
+    /**
+     * @return \Doctrine\ORM\QueryBuilder|mixed
+     */
     public function inner();
 }
