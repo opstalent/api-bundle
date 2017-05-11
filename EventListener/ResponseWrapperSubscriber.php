@@ -2,9 +2,13 @@
 
 namespace Opstalent\ApiBundle\EventListener;
 
-use Opstalent\ApiBundle\Annotation\Response;
+use Opstalent\ApiBundle\Exception\AnnotationNotFoundException;
+use Opstalent\ApiBundle\Resolver\ExceptionCodeResolver;
+use Opstalent\ApiBundle\Resolver\ResponseClassResolver;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
@@ -20,6 +24,7 @@ class ResponseWrapperSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::VIEW => ['wrapResponse', -100],
+            KernelEvents::EXCEPTION => ['handleExceptionResponse', -100],
         ];
     }
 
@@ -28,18 +33,37 @@ class ResponseWrapperSubscriber implements EventSubscriberInterface
      */
     public function wrapResponse(GetResponseForControllerResultEvent $event)
     {
-        $request = $event->getRequest();
-        $annotation = $request->attributes->get('_response_transformer');
-        if (
-            !$annotation instanceof Response
-            || $event->hasResponse()
-        ) {
+        try {
+            $classname = ResponseClassResolver::resolveByRequest($event->getRequest());
+        } catch (AnnotationNotFoundException $e) {
             return;
         }
 
-        $classname = $annotation->getClass();
         $response = new $classname($event->getControllerResult(), 200, [], true);
 
+        $event->setResponse($response);
+    }
+
+    /**
+     * @param GetResponseForExceptionEvent $event
+     */
+    public function handleExceptionResponse(GetResponseForExceptionEvent $event)
+    {
+        try {
+            $classname = ResponseClassResolver::resolveByRequest($event->getRequest());
+        } catch (AnnotationNotFoundException $e) {
+            $classname = JsonResponse::class;
+        }
+
+        $exception = $event->getException();
+
+        $content = [
+            'success' => false,
+            'code' => ExceptionCodeResolver::resolveResponseCode($exception),
+            'message' => $exception->getMessage(),
+        ];
+
+        $response = new $classname($content, $content['code'], []);
         $event->setResponse($response);
     }
 }
