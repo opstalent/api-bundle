@@ -71,11 +71,16 @@ class QueryBuilder implements QueryBuilderInterface
                 break;
             default:
                 $this->inner()
-                    ->andWhere($field, ':' . $field)
-                    ->setParameter($field, $value)
+                    ->andWhere($field . " = ". ':' . $this->stripDot($field))
+                    ->setParameter($this->stripDot($field), $value)
                     ;
                 break;
         }
+    }
+
+    public function stripDot(string $str)
+    {
+        return str_replace(".", "_" , $str);
     }
 
     /**
