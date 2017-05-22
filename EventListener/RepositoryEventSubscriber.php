@@ -123,7 +123,6 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
         foreach ($data as $filter => $value) {
             try {
                 $propertyType = $this->columnTypeResolver->resolve($repository->getEntityName(), $filter);
-                dump($propertyType);
                 $event->getQueryBuilder()->filter($filter, $propertyType, $value);
 
                 unset($data[$filter]);
