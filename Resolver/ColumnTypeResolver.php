@@ -33,10 +33,11 @@ class ColumnTypeResolver
     public function resolve(string $entity, string $column) : string
     {
         $metadata = $this->manager->getClassMetadata($entity);
-        if (!array_key_exists($column, $metadata->fieldMappings)) {
-            throw new ColumnNotDefinedException($entity, $column);
+        if (array_key_exists($column, $metadata->fieldMappings)) {
+            return $metadata->fieldMappings[$column]['type'];
+        } elseif(array_key_exists($column, $metadata->associationMappings)) {
+            return 'entity';
         }
-
-        return $metadata->fieldMappings[$column]['type'];
+        throw new ColumnNotDefinedException($entity, $column);
     }
 }
