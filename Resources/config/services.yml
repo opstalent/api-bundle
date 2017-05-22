@@ -61,9 +61,12 @@ services:
     class: Opstalent\ApiBundle\Service\DateTimeNormalizerService
   opstalent.api_bundle.normalizer.array_collection:
     class: Opstalent\ApiBundle\Service\ArrayCollectionNormalizerService
+  opstalent.api_bundle.normalizer.object:
+    class: Opstalent\ApiBundle\Service\ObjectNormalizerService
+    parent: serializer.normalizer.object
   opstalent.api_bundle.serializer_service:
     class: Opstalent\ApiBundle\Service\SerializerService
     arguments:
-      - ["@opstalent.api_bundle.normalizer.array_collection", "@opstalent.api_bundle.normalizer.datetime", "@serializer.normalizer.object"]
+      - ["@opstalent.api_bundle.normalizer.array_collection", "@opstalent.api_bundle.normalizer.datetime", "@opstalent.api_bundle.normalizer.object"]
       - ["@serializer.encoder.json"]
       - "@security.token_storage"
