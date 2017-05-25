@@ -21,7 +21,7 @@ class ControllerRepositoryResultEvent extends EventAware
      */
     public function __construct($result, GetResponseForControllerResultEvent $event)
     {
-        $this->controllerResult = $result;
+        $this->controllerRepositoryResult = $result;
         parent::__construct($event);
     }
 
@@ -30,7 +30,7 @@ class ControllerRepositoryResultEvent extends EventAware
      */
     public function setControllerRepositoryResult($result)
     {
-        $this->controllerResult = $result;
+        $this->controllerRepositoryResult = $result;
     }
 
     /**
@@ -38,6 +38,6 @@ class ControllerRepositoryResultEvent extends EventAware
      */
     public function getControllerRepositoryResult()
     {
-        return $this->controllerResult;
+        return $this->controllerRepositoryResult;
     }
 }
