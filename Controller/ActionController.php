@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @API\Response(class="Symfony\Component\HttpFoundation\JsonResponse")
+ * @API\LifecycleEvents
  */
 class ActionController extends Controller
 {

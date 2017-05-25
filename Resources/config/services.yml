@@ -17,6 +17,13 @@ services:
     tags:
         - { name: kernel.event_subscriber }
 
+  kernel.event_subscriber.controller_lifecycle:
+    class: Opstalent\ApiBundle\EventListener\ControllerLifecycleSubscriber
+    arguments:
+        - '@event_dispatcher'
+    tags:
+        - { name: kernel.event_subscriber }
+
   kernel.event_subscriber.response_wrapper:
     class: Opstalent\ApiBundle\EventListener\ResponseWrapperSubscriber
     tags:
