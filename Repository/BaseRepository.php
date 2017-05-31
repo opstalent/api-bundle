@@ -14,6 +14,7 @@ class BaseRepository extends EntityRepository implements
     PersistableRepositoryInterface,
     SearchableRepositoryInterface
 {
+    const DEFAULT_LIMIT = 10;
     protected $filters = [];
     protected $repositoryName='';
     protected $repositoryAlias='';

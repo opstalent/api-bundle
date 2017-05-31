@@ -5,6 +5,7 @@ namespace Opstalent\ApiBundle\EventListener;
 use Opstalent\ApiBundle\Event\RepositoryEvents;
 use Opstalent\ApiBundle\Event\RepositorySearchEvent;
 use Opstalent\ApiBundle\Exception\ColumnNotDefinedException;
+use Opstalent\ApiBundle\Repository\BaseRepository;
 use Opstalent\ApiBundle\Resolver\ColumnTypeResolver;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -44,7 +45,9 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     }
 
     /**
+     * If limit is not fount BaseRepository::DEFAULT_LIMIT is used.
      * @param RepositorySearchEvent $event
+     *
      */
     public function prepareLimit(RepositorySearchEvent $event)
     {
@@ -55,6 +58,8 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
             unset($data['limit']);
 
             $event->setData($data);
+        } else {
+            $event->getQueryBuilder()->setLimit(BaseRepository::DEFAULT_LIMIT);
         }
     }
 
