@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
+use Opstalent\ApiBundle\Exception\FormException;
 
 /**
  * @API\Response(class="Symfony\Component\HttpFoundation\JsonResponse")
@@ -37,7 +38,7 @@ class ActionController extends Controller
         if (($form->isSubmitted() && $form->isValid()) || $form->isEmpty()) {
             return is_array($form->getData()) ? $form->getData() : [];
         } else {
-            throw new \Exception((string)$form->getErrors(true, false), 400);
+            throw new FormException((string)$form->getErrors(true, true), 400, $form->getErrors());
         }
     }
 
@@ -63,7 +64,7 @@ class ActionController extends Controller
         if (($form->isSubmitted() && $form->isValid())) {
             return $form->getData();
         } else {
-            throw new \Exception((string)$form->getErrors(true, true), 400);
+            throw new FormException((string)$form->getErrors(true, true), 400, $form->getErrors());
         }
     }
 
@@ -87,7 +88,7 @@ class ActionController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             return $form->getData();
         } else {
-            throw new \Exception((string) $form->getErrors(true, false), 404);
+            throw new FormException((string)$form->getErrors(true, true), 400, $form->getErrors());
         }
     }
 
