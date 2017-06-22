@@ -35,7 +35,7 @@ class FormException extends \Exception {
             $this->formErrors->getForm()->getErrors(true)->next();
             array_push($formErrors,[
                 "message" => $error->getCause()->getMessage(),
-                "propertyPath" => $error->getCause()->getPropertyPath(),
+                "propertyPath" => str_replace("data.","", $error->getCause()->getPropertyPath()),
             ]);
         }
         return $formErrors;
