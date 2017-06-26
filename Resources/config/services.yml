@@ -14,6 +14,8 @@ services:
 
   kernel.event_subscriber.cors:
     class: Opstalent\ApiBundle\EventListener\CORSSubscriber
+    arguments:
+        - "@router"
     tags:
         - { name: kernel.event_subscriber }
 
