@@ -78,17 +78,28 @@ class ActionController extends Controller
         $route = $this->get('router')->getRouteCollection()->get($request->attributes->get('_route'));
 
         $form = $this->createForm($route->getOption('form'), $entity);
-        foreach ($form->all() as $field => $fieldForm) {
-            if (!array_key_exists($field, $request->request->get($form->getName()))) {
-                $form->remove($field);
-            }
-        }
+        $this->removeFormFields($request->request->all(),$form,$form->getName());
         $form->handleRequest($request);
         $this->get('event_dispatcher')->dispatch(ApiEvents::POST_HANDLE_REQUEST, new ApiEvent($request, $form));
         if ($form->isSubmitted() && $form->isValid()) {
             return $form->getData();
         } else {
             throw new FormException((string)$form->getErrors(true, true), 400, $form->getErrors());
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param Form $form
+     */
+    protected function removeFormFields(array $parameters, Form $form, string $formName)
+    {
+        foreach ($form->all() as $field => $fieldForm) {
+            if (!array_key_exists($field, $parameters[$form->getName()])) {
+                $form->remove($field);
+            } else {
+                $this->removeFormFields($parameters[$form->getName()][$field],$fieldForm, $formName);
+            }
         }
     }
 
