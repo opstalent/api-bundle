@@ -66,7 +66,7 @@ class CORSSubscriber implements EventSubscriberInterface
 
     protected function getAllowedMethods(Request $request)
     {
-        $path = str_replace("/app_dev.php","",$request->server->get('DOCUMENT_URI'));
+        $path = str_replace("/app_dev.php","",$request->server->get('REQUEST_URI'));
         if(substr_count($path,"/") == 2) {
             $pos = strrpos($path, '/');
             $id = $pos === false ? $path : substr($path, $pos + 1);
