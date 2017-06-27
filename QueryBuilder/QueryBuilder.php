@@ -63,6 +63,7 @@ class QueryBuilder implements QueryBuilderInterface
         $field = $this->mainTableAlias . '.' . $field;
         switch($type) {
             case 'string':
+            case 'text':
                 $this->stringFilter($field, $value);
                 break;
             case 'datetime':
