@@ -85,6 +85,8 @@ class ActionController extends Controller
         foreach ($form->all() as $field => $fieldForm) {
             if (!array_key_exists($field, $request->request->get($form->getName()))) {
                 $form->remove($field);
+            } else {
+                $this->removeUnusedFields($request->request->get($form->getName()),$fieldForm);
             }
         }
         $form->handleRequest($request);
@@ -93,6 +95,21 @@ class ActionController extends Controller
             return $form->getData();
         } else {
             throw new FormException((string)$form->getErrors(true, true), 400, $form->getErrors());
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param Form $form
+     */
+    protected function removeUnusedFields(array $parameters, Form $form)
+    {
+        foreach ($form->all() as $field => $fieldForm) {
+            if (!array_key_exists($field, $parameters[$form->getName()])) {
+                $form->remove($field);
+            } else {
+                $this->removeUnusedFields($parameters[$form->getName()],$fieldForm);
+            }
         }
     }
 
