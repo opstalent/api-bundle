@@ -59,7 +59,7 @@ class BaseRepository extends EntityRepository implements
         $this->dispatchEvent(new RepositoryEvent(
             RepositoryEvents::AFTER_SEARCH_BY_FILTER,
             $this,
-            null
+            $result
         ));
 
         return $result;
