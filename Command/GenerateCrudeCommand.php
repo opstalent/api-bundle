@@ -10,19 +10,13 @@ namespace Opstalent\ApiBundle\Command;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Opstalent\ApiBundle\Util\FormGenerator;
-use Opstalent\ApiBundle\Util\RepositoryGenerator;
-use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use AppBundle\Entity\User;
 use ReflectionClass;
 use ReflectionProperty;
-use ReflectionObject;
 use Symfony\Component\Yaml\Yaml;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Opstalent\ApiBundle\Util\Pluralizer;
 use Doctrine\Bundle\DoctrineBundle\Mapping\DisconnectedMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
@@ -42,6 +36,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
+    protected $entityManager;
 
 
     protected function configure()
@@ -75,8 +70,11 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                 $entityPaths = [$input->getArgument('entityPath')];
             }
 
+            $this->entityManager = $this->getContainer()->get('doctrine.orm.entity_manager');
+            $this->validatePath($entityPaths);
             $this->createApiRoutes($entityPaths); // main route file
             $this->createRepositoriesYml($entityPaths); // repositories.yml
+
 
             foreach ($entityPaths as $entityPath) {
                 $className = $this->getClassName($entityPath);
@@ -101,37 +99,28 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             dump('koniec');
             exit;
 
-            $reader = new AnnotationReader();
-            $reflectionClass = new ReflectionClass($entity);
-            $classAnnotations = $reader->getClassAnnotations($reflectionClass);
-
-//        $reflectionObject = new ReflectionObject($user);
-//        $objectAnnotations = $reader->getClassAnnotations($reflectionObject);
-
-            dump($classAnnotations);
-
-
-            $cols = $this->getContainer()->get('doctrine.orm.entity_manager')->getClassMetadata(get_class($user))->getColumnNames();
-//        $cols = $this->getContainer()->get('')
-
-//        dump($cols);
-//        exit;
-            foreach ($cols as $property) {
-                dump($property);
-                try {
-                    $reflectionProperty = new ReflectionProperty('AppBundle\Entity\User', $property);
-                } catch (\ReflectionException $e) {
-                    echo($e->getMessage());
-                }
-                $propertyAnnotations = $reader->getPropertyAnnotations($reflectionProperty);
-                dump($propertyAnnotations);
-            }
-
         } catch (Exception $e) {
             var_dump($e->getTraceAsString());
         }
+    }
 
+    private function validatePath($entityPaths)
+    {
+        foreach ($entityPaths as $entityPath) {
+            if (!class_exists($entityPath)) throw new \Exception('Class' . $entityPath . 'does not exists');
+            if (!$this->isEntity($entityPath)) throw new \Exception('Class' . $entityPath . 'is not doctrine entity');
+        }
+    }
 
+    private function isEntity($class)
+    {
+        if (is_object($class)) {
+            $class = ($class instanceof Proxy)
+                ? get_parent_class($class)
+                : get_class($class);
+        }
+
+        return !$this->entityManager->getMetadataFactory()->isTransient($class);
     }
 
     public function editEntityFile(string $entityPath)
@@ -143,10 +132,10 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             if (strpos($line, "repositoryClass") != false) {
                 if ($this->overWrite) {
                     $fileArray[$key] = ' * @ORM\\Entity(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")';
+
                     $newFile = implode("\n", $fileArray);
                     return self::dump($filePath, $newFile);
                 }
-
             } elseif (strpos($line, "@ORM\\Id") != false) {
                 $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
                 $newFile = substr_replace($entityFile, '(' . 'repositoryClass="AppBundle\Repository\\' . $this->getClassName($entityPath) . 'Repository' . '")', $entryPosition, 0);
@@ -276,9 +265,14 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     private function createApiRouteFile($entityPath)
     {
         $className = $this->getClassName($entityPath);
-        $ymlArray = $this->createRoutes($entityPath);
-        $yml = Yaml::dump($ymlArray, 2);
-        file_put_contents($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . strtolower(Pluralizer::pluralize($className)) . '.yml', $yml);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . $pluralClassName . '.yml';
+        if ($this->overWrite || !file_exists($filePath)) {
+            $ymlArray = $this->createRoutes($entityPath);
+            $yml = Yaml::dump($ymlArray, 10);
+            return self::dump($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . $pluralClassName . '.yml', $yml);
+        }
+
     }
 
     private function getEntitiesPaths()
@@ -328,7 +322,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         $ymlArray['parameters'] = $arrayParameters;
         $ymlArray['services'] = $arrayRepositories;
         if ($modified) {
-            $yml = Yaml::dump($ymlArray);
+            $yml = Yaml::dump($ymlArray, 4);
             self::mkdir(dirname($filePath));
             return self::dump($filePath, $yml);
         } else return 0;
