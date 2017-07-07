@@ -3,15 +3,13 @@
 namespace {{ namespace }}\Form\{{ entity_class }};
 
 {% block use_statements %}
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-{%- for key , use in uses -%}
-use Symfony\Component\Form\Extension\Core\Type\{{ use }};
-
-{%- endfor %}
-
 use AppBundle\Entity\{{ entity_class }};
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;{{ '\n' }}
+{%- for key , use in uses -%}
+use Symfony\Component\Form\Extension\Core\Type\{{ use }};{{ '\n' }}
+{%- endfor %}
+use Symfony\Component\OptionsResolver\OptionsResolver;
 {% endblock use_statements %}
 
 {% block class_definition %}
@@ -20,36 +18,34 @@ class AddType extends AbstractType
 {
 {% block class_body %}
     {%- if fields|length > 0 %}
-/**
-* {@inheritdoc}
-*/
-public function buildForm(FormBuilderInterface $builder, array $options)
+    /**
+     *   {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder
-
+        $builder{{ '\n' }}
 {%- for key , field in fields -%}
 
 {% if field.type == 'DateTimeType' %}
-        ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true ,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
+            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
 {% else %}
-    ->add('{{ key }}', {{ field.type }}::class,[{% if field.nullable == false %} 'required' => true {% else %} 'required' => false {% endif %}, 'mapped' => true])
+            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true])
 {% endif %}
-
-
-
 {%- endfor %}
-;
+        ;
+    }
 
-}
-
-public function configureOptions(OptionsResolver $resolver)
-{
-$resolver->setDefaults([
-'data_class' => {{ entity_class }}::class,
-]);
-}
-
+    /**
+     *   {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver
+            ->setDefault('method', 'POST')
+            ->setDefault('data_class',  {{ entity_class }}::class);
+    }
 {% endif %}
 
 {% endblock class_body %}
 }
+

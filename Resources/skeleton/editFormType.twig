@@ -3,9 +3,10 @@
 namespace {{ namespace }}\Form\{{entity_class}};
 
 {% block use_statements %}
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\EmailType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\AbstractType;{{ '\n' }}
+{%- for key , use in uses -%}
+use Symfony\Component\Form\Extension\Core\Type\{{ use }};{{ '\n' }}
+{%- endfor %}
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 {% endblock use_statements %}
@@ -15,22 +16,33 @@ class EditType extends AbstractType
 {% endblock class_definition %}
 {
 {% block class_body %}
+{%- if fields|length > 0 %}
+    /**
+     *   {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder{{ '\n' }}
+{%- for key , field in fields -%}
 
-/**
+{% if field.type == 'DateTimeType' %}
+            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
+{% else %}
+            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true])
+{% endif %}
+{%- endfor %}
+       ;
+    }
 
-* {@inheritdoc}
-*/
-public function buildForm(FormBuilderInterface $builder, array $options)
-{
-  parent::buildForm($builder, $options);
-       $builder->setMethod("PUT");
-       /** @var FormBuilderInterface $field */
-       foreach ($builder->all() as $field)
-       {
-       $field->setRequired(false);
-       }
-}
-
+    /**
+     *   {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver
+            ->setDefault('method', 'PUT');
+    }
+{% endif %}
 
 {% endblock class_body %}
 }
