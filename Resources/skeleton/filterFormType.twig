@@ -1,13 +1,14 @@
 <?php
-
+{% set dateOptions = false %}
 namespace {{ namespace }}\Form\{{entity_class}};
 
 {% block use_statements %}
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormBuilderInterface;{{ '\n' }}
 {%- for key , use in uses -%}
-use Symfony\Component\Form\Extension\Core\Type\{{ use }};
+use Symfony\Component\Form\Extension\Core\Type\{{ use }};{{ '\n' }}
 {%- endfor %}
+use Symfony\Component\OptionsResolver\OptionsResolver;
 {% endblock use_statements %}
 
 {% block class_definition %}
@@ -16,24 +17,33 @@ class FilterType extends AbstractType
 {
 {% block class_body %}
     {%- if fields|length > 0 %}
-/**
-* {@inheritdoc}
-*/
-public function buildForm(FormBuilderInterface $builder, array $options)
-{
-$builder
-
+    /**
+     *   {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder{{ '\n' }}
 {%- for key , field in fields -%}
-
-         ->add('{{ key }}', {{ field.type }}::class,['required' => false, 'mapped' => false])
-            {% spaceless %}
-
-            {% endspaceless %}
-
-{%- endfor %}
-;
-}
+{% if field.type == 'DateTimeType' or field.type == 'DateType' %} {% set dateOptions = true %}
+            ->add('{{ key }}', {{ field.type }}::class, ['required' => false, 'mapped' => true, 'widget' => 'single_text', 'format' => $options['date_format']])
+{% else %}
+            ->add('{{ key }}', {{ field.type }}::class, ['required' => false, 'mapped' => true])
 {% endif %}
+{%- endfor %}
+            ;
+    }
 
+    /**
+     *   {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver
+            ->setDefaults([
+                'method' => 'GET'
+            ]){% if dateOptions == true %}->setDefault('date_format', 'yyyy-MM-dd')
+            ->setAllowedTypes('date_format', 'string');{{ '\n' }}{% endif %}
+    }
+{% endif %}
 {% endblock class_body %}
 }

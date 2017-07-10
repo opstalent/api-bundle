@@ -1,8 +1,9 @@
 <?php
-
+{% set dateOptions = false %}
 namespace {{ namespace }}\Form\{{entity_class}};
 
 {% block use_statements %}
+use AppBundle\Entity\{{ entity_class }};
 use Symfony\Component\Form\AbstractType;{{ '\n' }}
 {%- for key , use in uses -%}
 use Symfony\Component\Form\Extension\Core\Type\{{ use }};{{ '\n' }}
@@ -24,11 +25,11 @@ class EditType extends AbstractType
     {
         $builder{{ '\n' }}
 {%- for key , field in fields -%}
-
-{% if field.type == 'DateTimeType' %}
-            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true,'widget' => 'single_text',  'format' => 'yyyy-MM-dd'])
+{% if key == "created" or key == "updated" %}
+{% elseif  field.type == 'DateTimeType' or field.type == 'DateType'%} {% set dateOptions = true %}
+            ->add('{{ key }}', {{ field.type }}::class, ['required' => false, 'mapped' => true,'widget' => 'single_text',  'format' => $options['date_format']])
 {% else %}
-            ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true])
+            ->add('{{ key }}', {{ field.type }}::class, ['required' => false, 'mapped' => true])
 {% endif %}
 {%- endfor %}
        ;
@@ -40,8 +41,12 @@ class EditType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver
-            ->setDefault('method', 'PUT');
-    }
+            ->setDefaults([
+                'data_class' => {{ entity_class }}::class,
+                'method' => 'PUT',
+            ]){% if dateOptions == true %}->setDefault('date_format', 'yyyy-MM-dd')
+            ->setAllowedTypes('date_format', 'string');{{ '\n' }}{% endif %}
+}
 {% endif %}
 
 {% endblock class_body %}

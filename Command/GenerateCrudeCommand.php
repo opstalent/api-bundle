@@ -14,8 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use ReflectionClass;
-use ReflectionProperty;
+use Twig_Extension_Debug;
 use Symfony\Component\Yaml\Yaml;
 use Opstalent\ApiBundle\Util\Pluralizer;
 use Doctrine\Bundle\DoctrineBundle\Mapping\DisconnectedMetadataFactory;
@@ -33,7 +32,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected $overWrite;
     protected $actions;
     private $formMapPath = ['FilterType.php' => 'filterFormType.twig', 'AddType.php' => 'addFormType.twig', 'EditType.php' => 'editFormType.twig'];
-    private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
+    private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'date' => 'DateType' , 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
     protected $entityManager;
@@ -248,7 +247,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected function render($template, $parameters)
     {
         $twig = $this->getTwigEnvironment();
-
+        $twig->addExtension(new Twig_Extension_Debug());
         return $twig->render($template, $parameters);
     }
 
