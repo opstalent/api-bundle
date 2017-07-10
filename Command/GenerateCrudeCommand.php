@@ -32,7 +32,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected $overWrite;
     protected $actions;
     private $formMapPath = ['FilterType.php' => 'filterFormType.twig', 'AddType.php' => 'addFormType.twig', 'EditType.php' => 'editFormType.twig'];
-    private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'date' => 'DateType' , 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
+    private $map = ['array' => 'TextType', 'string' => "TextType", 'integer' => "NumberType", '2' => 'EntityType', 'date' => 'DateType', 'datetime' => 'DateTimeType', 'boolean' => 'CheckboxType', 'text' => 'TextType', 'float' => 'NumberType'];
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
     protected $entityManager;
@@ -124,6 +124,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     public function editEntityFile(string $entityPath)
     {
+
         $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/' . str_replace('\\', '/', $entityPath . '.php');
         $entityFile = file_get_contents($filePath);
         $fileArray = explode("\n", $entityFile);
@@ -134,6 +135,8 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
                     $newFile = implode("\n", $fileArray);
                     return self::dump($filePath, $newFile);
+                } else {
+                    return null;
                 }
             } elseif (strpos($line, "@ORM\\Id") != false) {
                 $entryPosition = $entityAnnotation = strpos($entityFile, "@ORM\\Entity") + 11;
