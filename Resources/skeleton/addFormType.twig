@@ -10,6 +10,10 @@ use Symfony\Component\Form\FormBuilderInterface;{{ '\n' }}
 use Symfony\Component\Form\Extension\Core\Type\{{ use }};{{ '\n' }}
 {%- endfor %}
 use Symfony\Component\OptionsResolver\OptionsResolver;
+{% if annotations.authorSubscriber == true %}
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Opstalent\ApiBundle\Form\EventListener\AuthorSubscriber;
+{%  endif  %}
 {% endblock use_statements %}
 
 {% block class_definition %}
@@ -17,6 +21,21 @@ class AddType extends AbstractType
 {% endblock class_definition %}
 {
 {% block class_body %}
+
+    {% if annotations.authorSubscriber == true %}
+    private $tokenStorage;
+
+    /**
+     * AddType constructor.
+     * @param TokenStorageInterface $tokenStorage
+     */
+    public function __construct(TokenStorageInterface $tokenStorage)
+    {
+        $this->tokenStorage = $tokenStorage;
+    }
+    {%  endif  %}
+
+
     {%- if fields|length > 0 %}
     /**
      *   {@inheritdoc}
@@ -32,6 +51,9 @@ class AddType extends AbstractType
             ->add('{{ key }}', {{ field.type }}::class, [{% if field.nullable == false %}'required' => true{% else %}'required' => false{% endif %}, 'mapped' => true])
 {% endif %}
 {%- endfor %}
+    {% if annotations.authorSubscriber == true %}
+            ->addEventSubscriber(new AuthorSubscriber($this->tokenStorage, 'user'))
+    {%  endif  %}
         ;
     }
 

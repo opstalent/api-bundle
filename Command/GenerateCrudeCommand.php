@@ -36,6 +36,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
     protected $entityManager;
+    protected $annotationMap = ['authorSubscriber' => 'Opstalent\\ApiBundle\\Annotation\\AuthorSubscriber'];
 
 
     protected function configure()
@@ -77,21 +78,25 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
             foreach ($entityPaths as $entityPath) {
                 $className = $this->getClassName($entityPath);
+                $pluralClassName = $this->createPluralClassName($entityPath);
                 $this->createApiRouteFile($entityPath);
                 $metadata = $this->getEntityMetadata($entityPath);
-
+                $entityAnnotations = $this->getEntityAnnotations($entityPath);
                 if ($this->overWrite) {
-                    $this->generateFormType($metadata[0], $className, 'FilterType.php');
-                    $this->generateFormType($metadata[0], $className, 'AddType.php');
-                    $this->generateFormType($metadata[0], $className, 'EditType.php');
+                    $this->injectIntoForm($entityPath, $entityAnnotations);
+                    $this->generateFormType($metadata[0], $className, 'FilterType.php', $entityAnnotations);
+                    $this->generateFormType($metadata[0], $className, 'AddType.php', $entityAnnotations);
+                    $this->generateFormType($metadata[0], $className, 'EditType.php', $entityAnnotations);
                     $this->generateRepository($entityPath, $className);
                 } else {
-                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/FilterType.php')) $this->generateFormType($metadata[0], $className, 'FilterType.php');
-                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/AddType.php')) $this->generateFormType($metadata[0], $className, 'AddType.php');
-                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/EditType.php')) $this->generateFormType($metadata[0], $className, 'EditType.php');
+                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../app/' . 'config/forms/' . $pluralClassName . '.yml')) $this->injectIntoForm($entityPath, $entityAnnotations);
+                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/FilterType.php')) $this->generateFormType($metadata[0], $className, 'FilterType.php', $entityAnnotations);
+                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/AddType.php')) $this->generateFormType($metadata[0], $className, 'AddType.php', $entityAnnotations);
+                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/EditType.php')) $this->generateFormType($metadata[0], $className, 'EditType.php', $entityAnnotations);
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Repository/' . $className . 'Repository.php')) $this->generateRepository($entityPath, $className);
 
                 }
+                $this->updateMainFormFile();
                 $this->editEntityFile($entityPath);
 
             }
@@ -102,6 +107,31 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             var_dump($e->getTraceAsString());
         }
     }
+
+    private function updateMainFormFile()
+    {
+        $files = scandir($this->getContainer()->get('kernel')->getRootDir() . '/../app/config/forms');
+        unset($files[0]);
+        unset($files[1]);
+        $this->createApiFormsYml($files);
+
+    }
+
+    private function createApiFormsYml($files)
+    {
+        $ymlArray['imports'] = [];
+
+        if ($files) {
+            foreach ($files as $key => $file) {
+                $arr = explode("/", $file, 2);
+                $fileName = $arr[0];
+                $ymlArray['imports'][$key - 2] = ['resource' => 'forms/' . $fileName ];
+            }
+            $yml = Yaml::dump($ymlArray, 10);
+            return self::dump($this->getContainer()->get('kernel')->getRootDir() . '/config/api_forms.yml', $yml);
+        }
+    }
+
 
     private function validatePath($entityPaths)
     {
@@ -148,10 +178,6 @@ class GenerateCrudeCommand extends ContainerAwareCommand
 
     }
 
-    private function createRepositoryClassName()
-    {
-
-    }
 
     public function generateRepository($entityPath, $className)
     {
@@ -166,7 +192,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     }
 
 
-    private function generateFormType(ClassMetadataInfo $metadata, $className, $formType)
+    private function generateFormType(ClassMetadataInfo $metadata, $className, $formType, $entityAnnotations)
     {
 
         $dirPath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/AppBundle/Form/' . $className . '/' . $formType;
@@ -178,8 +204,62 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             'entity_namespace' => 'Entity',
             'entity_class' => $className,
             'form_class' => $className . 'Type',
+            'annotations' => $entityAnnotations
         ));
 
+
+    }
+
+    private function injectIntoForm($entityPath, $entityAnnotations)
+    {
+
+        foreach ($entityAnnotations as $key => $value) {
+
+            switch ($key) {
+                case 'authorSubscriber':
+                    if ($value) $this->inject('AddType', '@security.token_storage', $entityPath);
+            }
+
+        }
+    }
+
+    private function inject($form, $parameter, $entityPath)
+    {
+        $className = $this->getClassName($entityPath);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/config/forms/' . $pluralClassName . '.yml';
+        if ($this->overWrite || !file_exists($filePath)) {
+            $ymlArray = $this->createFormService($form, $parameter, $entityPath);
+            $yml = Yaml::dump($ymlArray, 10);
+            return self::dump($this->getContainer()->get('kernel')->getRootDir() . '/config/forms/' . $pluralClassName . '.yml', $yml);
+        }
+
+    }
+
+    private function createFormService($form, $parameter, $entityPath)
+    {
+        if ($this->overWrite) $ymlArray = [];
+        elseif (file_exists($filePath = $this->getContainer()->get('kernel')->getRootDir() . '/config/forms/' . $this->createPluralClassName($entityPath) . '.yml')) $ymlArray = Yaml::parse(file_get_contents($filePath));
+        else $ymlArray = [];
+
+        if ($form == 'AddType') {
+            if ($this->overWrite || !array_key_exists('app.form.' . $this->createPluralClassName($entityPath) . 'add', $ymlArray)) {
+                $addArray = $this->generateFormYml('Add', $parameter, $entityPath);
+                $ymlArray = array_merge($ymlArray, $addArray);
+            }
+        }
+
+        return $ymlArray;
+    }
+
+    private function generateFormYml($form, $parameter, $entityPath)
+    {
+        $className = $this->getClassName($entityPath);
+        $pluralClassName = strtolower(Pluralizer::pluralize($className));
+        $array = ['services' =>
+            ['app.form.' . $pluralClassName . '.' . strtolower($form) => ['class' => "AppBundle\\Form\\" . $className . "\\" . $form . 'Type', 'arguments' => [$parameter], 'tags' => [0 => ['name' => 'form.type']]]]];
+
+        return $array;
     }
 
     private function getUsesForFields(array $fieldsMetadata)
@@ -550,7 +630,17 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         return $factory->getClassMetadata($entity)->getMetadata();
     }
 
-
+    protected function getEntityAnnotations($entity)
+    {
+        $reader = new AnnotationReader();
+        $apiMetaAnnotation = $reader->getClassAnnotation(new \ReflectionClass(new $entity), $this->annotationMap['authorSubscriber']);
+        if ($apiMetaAnnotation) {
+            $entityAnnotations['authorSubscriber'] = strtolower($apiMetaAnnotation->subscribe);
+        } else {
+            $entityAnnotations['authorSubscriber'] = "false";
+        }
+        return $entityAnnotations;
+    }
 }
 
 
