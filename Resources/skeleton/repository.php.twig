@@ -5,6 +5,10 @@ namespace {{ namespace }}\Repository;
 {% block use_statements %}
 use Doctrine\ORM\QueryBuilder;
 use Opstalent\ApiBundle\Repository\BaseRepository;
+{% if annotations.ownerable %}
+use AppBundle\Entity\{{ entity_class }};
+use AppBundle\Entity\User;
+{% endif %}
 {% endblock use_statements %}
 
 {% block class_definition %}
@@ -15,10 +19,22 @@ class {{ repository_class }} extends BaseRepository
 {
 {% block class_body %}
 
- protected $filters = [];
- protected $repositoryName='AppBundle:{{ entity_class }}';
- protected $repositoryAlias='{{ entity_class |lower }}';
- protected $entityName='\{{ entity_path }}';
+    protected $filters = [];
+    protected $repositoryName='AppBundle:{{ entity_class }}';
+    protected $repositoryAlias='{{ entity_class |lower }}';
+    protected $entityName='\{{ entity_path }}';
+
+{% if annotations.ownerable %}
+    /**
+     * @param {{ entity_class }} ${{ entity_class |lower }}
+     * @param User $user
+     * @throws \Exception
+     */
+    public function authorizeOwner( {{ entity_class }} ${{ entity_class |lower }}, User $user)
+    {
+        if (!$user || ($education->getOwner() !== $user )) throw new \Exception("Access Denied", 403);
+    }
+{% endif %}
 
 {% endblock class_body %}
 }

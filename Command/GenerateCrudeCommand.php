@@ -36,7 +36,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected $skeletonDirs = [__DIR__ . '/../Resources/skeleton', __DIR__ . '/../Resources'];
     private static $output;
     protected $entityManager;
-    protected $annotationMap = ['authorSubscriber' => 'Opstalent\\ApiBundle\\Annotation\\AuthorSubscriber'];
+    protected $annotationMap = ['authorSubscriber' => 'Opstalent\\ApiBundle\\Annotation\\AuthorSubscriber', 'routes' => 'Opstalent\\ApiBundle\\Annotation\\RoutingOptions'];
 
 
     protected function configure()
@@ -79,21 +79,22 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             foreach ($entityPaths as $entityPath) {
                 $className = $this->getClassName($entityPath);
                 $pluralClassName = $this->createPluralClassName($entityPath);
-                $this->createApiRouteFile($entityPath);
-                $metadata = $this->getEntityMetadata($entityPath);
                 $entityAnnotations = $this->getEntityAnnotations($entityPath);
+                $this->createApiRouteFile($entityPath, $entityAnnotations);
+                $metadata = $this->getEntityMetadata($entityPath);
+
                 if ($this->overWrite) {
                     $this->injectIntoForm($entityPath, $entityAnnotations);
                     $this->generateFormType($metadata[0], $className, 'FilterType.php', $entityAnnotations);
                     $this->generateFormType($metadata[0], $className, 'AddType.php', $entityAnnotations);
                     $this->generateFormType($metadata[0], $className, 'EditType.php', $entityAnnotations);
-                    $this->generateRepository($entityPath, $className);
+                    $this->generateRepository($entityPath, $className, $entityAnnotations);
                 } else {
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../app/' . 'config/forms/' . $pluralClassName . '.yml')) $this->injectIntoForm($entityPath, $entityAnnotations);
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/FilterType.php')) $this->generateFormType($metadata[0], $className, 'FilterType.php', $entityAnnotations);
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/AddType.php')) $this->generateFormType($metadata[0], $className, 'AddType.php', $entityAnnotations);
                     if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Form/' . $className . '/EditType.php')) $this->generateFormType($metadata[0], $className, 'EditType.php', $entityAnnotations);
-                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Repository/' . $className . 'Repository.php')) $this->generateRepository($entityPath, $className);
+                    if (!file_exists($this->getContainer()->get('kernel')->getRootDir() . '/../src/' . 'AppBundle/Repository/' . $className . 'Repository.php')) $this->generateRepository($entityPath, $className, $entityAnnotations);
 
                 }
                 $this->updateMainFormFile();
@@ -125,7 +126,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             foreach ($files as $key => $file) {
                 $arr = explode("/", $file, 2);
                 $fileName = $arr[0];
-                $ymlArray['imports'][$key - 2] = ['resource' => 'forms/' . $fileName ];
+                $ymlArray['imports'][$key - 2] = ['resource' => 'forms/' . $fileName];
             }
             $yml = Yaml::dump($ymlArray, 10);
             return self::dump($this->getContainer()->get('kernel')->getRootDir() . '/config/api_forms.yml', $yml);
@@ -179,7 +180,7 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     }
 
 
-    public function generateRepository($entityPath, $className)
+    public function generateRepository($entityPath, $className, $entityAnnotations)
     {
         $dirPath = $this->getContainer()->get('kernel')->getRootDir() . '/../src/AppBundle/Repository/' . $className . 'Repository.php';
         $this->renderFile('repository.php.twig', $dirPath, array(
@@ -187,7 +188,8 @@ class GenerateCrudeCommand extends ContainerAwareCommand
             'entity_namespace' => 'Entity',
             'entity_class' => $className,
             'repository_class' => $className . 'Repository',
-            'entity_path' => $entityPath
+            'entity_path' => $entityPath,
+            'annotations' => $entityAnnotations
         ));
     }
 
@@ -344,13 +346,13 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         ));
     }
 
-    private function createApiRouteFile($entityPath)
+    private function createApiRouteFile($entityPath, $entityAnnotations)
     {
         $className = $this->getClassName($entityPath);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
         $filePath = $this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . $pluralClassName . '.yml';
         if ($this->overWrite || !file_exists($filePath)) {
-            $ymlArray = $this->createRoutes($entityPath);
+            $ymlArray = $this->createRoutes($entityPath, $entityAnnotations);
             $yml = Yaml::dump($ymlArray, 10);
             return self::dump($this->getContainer()->get('kernel')->getRootDir() . '/config/routing/' . $pluralClassName . '.yml', $yml);
         }
@@ -485,30 +487,40 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     }
 
 
-    private function createRoutes(string $entityPath)
+    private function createRoutes(string $entityPath, $entityAnnotations)
     {
         if ($this->overWrite) $ymlArray = [];
         elseif (file_exists($filePath = $this->getContainer()->get('kernel')->getRootDir() . '/config/' . $this->createPluralClassName($entityPath) . '.yml')) $ymlArray = Yaml::parse(file_get_contents($filePath));
         else $ymlArray = [];
 
-        if ($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'list', $ymlArray)) {
-            $listArray = $this->generateListRoute($entityPath);
+        if (in_array('default', $entityAnnotations['roles'])) $roles = ['ROLE_SUPER_ADMIN'];
+        else $roles = $entityAnnotations['roles'];
+
+        $ownerableEventPut = null;
+        $ownerableEventDelete = null;
+        if ($entityAnnotations['ownerable']) {
+            $ownerableEventPut = ['api_repository.persist.before' => ['authorizeOwner']];
+            $ownerableEventDelete = ['api_repository.remove.before' => ['authorizeOwner']];
+        }
+
+        if (($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'list', $ymlArray)) && (in_array('list', $entityAnnotations['routes'])) || in_array('default', $entityAnnotations['routes'])) {
+            $listArray = $this->generateListRoute($entityPath, $roles);
             $ymlArray = array_merge($ymlArray, $listArray);
         }
-        if ($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'get', $ymlArray)) {
-            $getArray = $this->generateGetRoute($entityPath);
+        if (($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'get', $ymlArray)) && (in_array('get', $entityAnnotations['routes'])) || in_array('default', $entityAnnotations['routes'])) {
+            $getArray = $this->generateGetRoute($entityPath, $roles);
             $ymlArray = array_merge($ymlArray, $getArray);
         }
-        if ($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'post', $ymlArray)) {
-            $postArray = $this->generatePostRoute($entityPath);
+        if (($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'post', $ymlArray)) && (in_array('post', $entityAnnotations['routes'])) || in_array('default', $entityAnnotations['routes'])) {
+            $postArray = $this->generatePostRoute($entityPath, $roles);
             $ymlArray = array_merge($ymlArray, $postArray);
         }
-        if ($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'put', $ymlArray)) {
-            $postArray = $this->generatePutRoute($entityPath);
+        if (($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'put', $ymlArray)) && (in_array('put', $entityAnnotations['routes'])) || in_array('default', $entityAnnotations['routes'])) {
+            $postArray = $this->generatePutRoute($entityPath, $roles, $ownerableEventPut);
             $ymlArray = array_merge($ymlArray, $postArray);
         }
-        if ($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'delete', $ymlArray)) {
-            $postArray = $this->generateDeleteRoute($entityPath);
+        if (($this->overWrite || !array_key_exists('api.' . $this->createPluralClassName($entityPath) . 'delete', $ymlArray)) && (in_array('delete', $entityAnnotations['routes'])) || in_array('default', $entityAnnotations['routes'])) {
+            $postArray = $this->generateDeleteRoute($entityPath, $roles, $ownerableEventDelete);
             $ymlArray = array_merge($ymlArray, $postArray);
         }
 
@@ -522,12 +534,13 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         return substr($entity, strrpos($entity, '\\') + 1);
     }
 
-    private function generateListRoute($entity)
+    private function generateListRoute($entity, $roles, $events = null)
     {
 
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
-        $array = ['api_' . $pluralClassName . '_list' =>
+        $routeLabel = 'api_' . $pluralClassName . '_list';
+        $array = [$routeLabel =>
             ['path' => '/' . $pluralClassName,
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:list'],
                 'methods' => ['GET'],
@@ -536,18 +549,20 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
-                        'roles' => ['ROLE_SUPER_ADMIN']
+                        'roles' => $roles
                     ]]]];
 
         return $array;
+
     }
 
-    private function generateGetRoute($entity)
+    private function generateGetRoute($entity, $roles, $events = null)
     {
 
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
-        $array = ['api_' . $pluralClassName . '_get' =>
+        $routeLabel = 'api_' . $pluralClassName . '_get';
+        $array = [$routeLabel =>
             ['path' => '/' . $pluralClassName . '/{id}',
                 'requirements' => ['id' => '\d+'],
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:get'],
@@ -556,18 +571,18 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
-                        'roles' => ['ROLE_SUPER_ADMIN']
+                        'roles' => $roles
                     ]]]];
-
         return $array;
     }
 
-    private function generatePostRoute($entity)
+    private function generatePostRoute($entity, $roles, $events = null)
     {
 
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
-        $array = ['api_' . $pluralClassName . '_post' =>
+        $routeLabel = 'api_' . $pluralClassName . '_post';
+        $array = [$routeLabel =>
             ['path' => '/' . $pluralClassName,
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:post'],
                 'methods' => ['POST'],
@@ -576,18 +591,18 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
-                        'roles' => ['ROLE_SUPER_ADMIN']
+                        'roles' => $roles
                     ]]]];
-
         return $array;
     }
 
-    private function generatePutRoute($entity)
+    private function generatePutRoute($entity, $roles, $events = null)
     {
 
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
-        $array = ['api_' . $pluralClassName . '_put' =>
+        $routeLabel = 'api_' . $pluralClassName . '_put';
+        $array = [$routeLabel =>
             ['path' => '/' . $pluralClassName . '/{id}',
                 'requirements' => ['id' => '\d+'],
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:put'],
@@ -597,19 +612,22 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
-                        'roles' => ['ROLE_SUPER_ADMIN']
+                        'roles' => $roles
                     ]]]];
-
+        if ($events) {
+            $array[$routeLabel]['options']['security']['events'] = $events;
+        }
         return $array;
     }
 
 
-    private function generateDeleteRoute($entity)
+    private function generateDeleteRoute($entity, $roles, $events = null)
     {
 
         $className = $this->getClassName($entity);
         $pluralClassName = strtolower(Pluralizer::pluralize($className));
-        $array = ['api_' . $pluralClassName . '_delete' =>
+        $routeLabel = 'api_' . $pluralClassName . '_delete';
+        $array = [$routeLabel =>
             ['path' => '/' . $pluralClassName . '/{id}',
                 'requirements' => ['id' => '\d+'],
                 'defaults' => ['_controller' => 'OpstalentApiBundle:Action:delete'],
@@ -618,9 +636,11 @@ class GenerateCrudeCommand extends ContainerAwareCommand
                     'repository' => '@repository.' . strtolower($className),
                     'security' => [
                         'secure' => true,
-                        'roles' => ['ROLE_SUPER_ADMIN']
+                        'roles' => $roles
                     ]]]];
-
+        if ($events) {
+            $array[$routeLabel]['options']['security']['events'] = $events;
+        }
         return $array;
     }
 
@@ -633,11 +653,23 @@ class GenerateCrudeCommand extends ContainerAwareCommand
     protected function getEntityAnnotations($entity)
     {
         $reader = new AnnotationReader();
-        $apiMetaAnnotation = $reader->getClassAnnotation(new \ReflectionClass(new $entity), $this->annotationMap['authorSubscriber']);
-        if ($apiMetaAnnotation) {
-            $entityAnnotations['authorSubscriber'] = strtolower($apiMetaAnnotation->subscribe);
+        $authorAnnotation = $reader->getClassAnnotation(new \ReflectionClass(new $entity), $this->annotationMap['authorSubscriber']);
+        $routesAnnotation = $reader->getClassAnnotation(new \ReflectionClass(new $entity), $this->annotationMap['routes']);
+//        dump($routesAnnotation);
+//        exit;
+        if ($authorAnnotation) {
+            $entityAnnotations['authorSubscriber'] = strtolower($authorAnnotation->subscribe);
         } else {
             $entityAnnotations['authorSubscriber'] = "false";
+        }
+        if ($routesAnnotation) {
+            $entityAnnotations['ownerable'] = strtolower($routesAnnotation->ownerable);
+            $entityAnnotations['routes'] = array_map('strtolower', $routesAnnotation->routes);
+            $entityAnnotations['roles'] = array_map('strtoupper', $routesAnnotation->roles);
+        } else {
+            $entityAnnotations['ownerable'] = "false";
+            $entityAnnotations['routes'] = ['default'];
+            $entityAnnotations['roles'] = ['default'];
         }
         return $entityAnnotations;
     }
