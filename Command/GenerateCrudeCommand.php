@@ -660,14 +660,14 @@ class GenerateCrudeCommand extends ContainerAwareCommand
         if ($authorAnnotation) {
             $entityAnnotations['authorSubscriber'] = strtolower($authorAnnotation->subscribe);
         } else {
-            $entityAnnotations['authorSubscriber'] = "false";
+            $entityAnnotations['authorSubscriber'] = false;
         }
         if ($routesAnnotation) {
             $entityAnnotations['ownerable'] = strtolower($routesAnnotation->ownerable);
             $entityAnnotations['routes'] = array_map('strtolower', $routesAnnotation->routes);
             $entityAnnotations['roles'] = array_map('strtoupper', $routesAnnotation->roles);
         } else {
-            $entityAnnotations['ownerable'] = "false";
+            $entityAnnotations['ownerable'] = false;
             $entityAnnotations['routes'] = ['default'];
             $entityAnnotations['roles'] = ['default'];
         }
