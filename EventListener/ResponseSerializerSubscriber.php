@@ -65,6 +65,8 @@ class ResponseSerializerSubscriber implements EventSubscriberInterface
         $serialized = $this->serializer->serialize($event->getControllerResult(), $serializable->format, [
             'enable_max_depth' => true,
             'groups' => $groups,
+            'entity' => $event->getControllerResult(),
+            'top' => true,
         ]);
 
         $event->setControllerResult($serialized);
