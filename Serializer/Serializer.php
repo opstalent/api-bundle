@@ -2,7 +2,7 @@
 
 namespace Opstalent\ApiBundle\Serializer;
 
-use \Symfony\Component\Serializer\Serializer as BaseSerializer;
+use Symfony\Component\Serializer\Serializer as BaseSerializer;
 
 /**
  * {@inheritDoc}
