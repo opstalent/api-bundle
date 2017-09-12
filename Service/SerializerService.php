@@ -8,13 +8,15 @@
 
 namespace Opstalent\ApiBundle\Service;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Serializer\Serializer;
+use Opstalent\ApiBundle\Serializer\Serializer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Security\Core\Role\RoleInterface;
 
+/**
+ * {@inheritDoc}
+ */
 class SerializerService extends Serializer
 {
 
