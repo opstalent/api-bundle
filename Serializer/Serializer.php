@@ -14,7 +14,7 @@ class Serializer extends BaseSerializer
      * @param $data
      * @return array
      */
-    protected function buildContext(array $context = [], $data)
+    protected function buildContext(array $context = [], $data): array
     {
         if(array_key_exists("top", $context)
             && is_object($data)
