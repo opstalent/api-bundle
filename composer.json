@@ -1,5 +1,5 @@
 {
-  "name" : "opstalent/apibundle",
+  "name" : "opstalent/api-bundle",
   "description" : "Basic RESTful api bundle + oauth2",
   "type" : "symfony-bundle",
   "authors" : [
