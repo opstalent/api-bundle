@@ -28,6 +28,8 @@ services:
 
   kernel.event_subscriber.response_wrapper:
     class: Opstalent\ApiBundle\EventListener\ResponseWrapperSubscriber
+    arguments:
+        - '@logger'
     tags:
       - { name: kernel.event_subscriber }
 
