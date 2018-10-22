@@ -53,6 +53,10 @@ class RepositoryEventSubscriber implements EventSubscriberInterface
     {
         $data = $event->getData();
         if (array_key_exists('limit', $data)) {
+            if($data['limit'] > 1000){
+               $data['limit'] = 1000;
+            }           
+            
             $event->getQueryBuilder()->setLimit($data['limit']);
 
             unset($data['limit']);
