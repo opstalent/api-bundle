@@ -2,6 +2,8 @@
 
 namespace Opstalent\ApiBundle\Resolver;
 
+use Opstalent\ApiBundle\Exception\InnerCodeException;
+use Opstalent\ApiBundle\Exception\InnerCodeExceptionInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -26,5 +28,20 @@ class ExceptionCodeResolver
         }
 
         return 500;
+    }
+
+    /**
+     * @param \Throwable $exception
+     * @return int
+     */
+    public static function resolveInnerResponseCode(\Throwable $exception) : int
+    {
+
+        if($exception instanceof InnerCodeExceptionInterface){
+            $code = $exception->getInnerCode();
+            return $code;
+        }
+
+        return 0;
     }
 }
