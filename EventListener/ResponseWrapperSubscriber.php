@@ -75,6 +75,7 @@ class ResponseWrapperSubscriber implements EventSubscriberInterface
         $content = [
             'success' => false,
             'code' => ExceptionCodeResolver::resolveResponseCode($exception),
+            'innerCode' => ExceptionCodeResolver::resolveInnerResponseCode($exception),
             'message' => $exception->getMessage(),
             'errors' => get_class($exception) === 'Opstalent\\ApiBundle\\Exception\\FormException' ? $exception->getFormErrors() : [],
         ];
